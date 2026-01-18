@@ -16,9 +16,9 @@
 
 ## Introduction
 
-Directory structure significantly impacts code maintainability, team collaboration, and application scalability. A well-organized structure enables developers to locate code quickly, understand system architecture, and modify features without affecting unrelated code.
+Directory structure significantly impacts code maintainability, team collaboration, and application scalability. A well-organized structure enables engineers to locate code quickly, understand system architecture, and modify features without affecting unrelated code.
 
-This guide addresses structure for large-scale applications with:
+This guide addresses structure for applications as they grow to include:
 - Multiple features and bounded contexts
 - Complex forms with nested subforms
 - Numerous pages and routes
@@ -28,30 +28,28 @@ This guide addresses structure for large-scale applications with:
 
 ### Technology Stack
 
-This guide is tailored for RAMP's tech stack:
-- **Backend:** Java with Spring Boot, Gradle build system, PostgreSQL database
-- **Frontend:** React with TypeScript, MVVM architecture pattern, Yarn package manager
-- **Testing:** JUnit/Mockito (backend), Jest/React Testing Library (frontend)
+This guide is tailored for the following tech stack:
+- **Backend:** Java 21 with Spring Boot 3.4.x, Gradle build system, PostgreSQL database
+- **Frontend:** React 18+ with TypeScript, MVVM architecture pattern, Yarn package manager, Vite build tool
+- **Testing:** JUnit 5/Mockito (backend), Vitest/React Testing Library (frontend), Playwright (E2E)
 
 ### Key Principles
 
-**Separation by Feature:** Group related code by feature or domain rather than technical layer.
+**Separation by Feature:** Related code is grouped by feature or domain rather than technical layer.
 
-**MVVM Architecture:** Frontend follows Model-View-ViewModel pattern with custom hooks serving as ViewModels.
+**MVVM Architecture:** The frontend follows the Model-View-ViewModel pattern with custom hooks serving as ViewModels.
 
-**Colocation:** Place related files close together. Tests, types, and styles should live near the code they support.
+**Colocation:** Related files are placed close together. Tests, types, and styles live near the code they support.
 
-**Discoverability:** Structure should make it obvious where new code belongs and where existing code lives.
+**Discoverability:** The structure makes it obvious where new code belongs and where existing code lives.
 
-**Scalability:** Organization should accommodate growth without requiring major restructuring.
+**Scalability:** The organization accommodates growth without requiring major restructuring.
 
 ---
 
 ## Repository Organization
 
-### Option 1: Monorepo (Recommended for Most Projects)
-
-Single repository containing both frontend and backend.
+This guide assumes a monorepo containing both the frontend and backend in a single repository.
 
 ```
 project-root/
@@ -66,46 +64,17 @@ project-root/
 └── .gitignore
 ```
 
-**Advantages:**
-- Simplified dependency management
-- Atomic commits across stack
-- Easier code sharing and refactoring
-- Single CI/CD pipeline
-- Unified versioning
+**Advantages of a monorepo:**
+- Simplified dependency management across frontend and backend
+- Atomic commits when changes span both layers
+- Easier code sharing and coordinated refactoring
+- Single CI/CD pipeline with unified versioning
+- Reduced coordination overhead for breaking API changes
 
-**Disadvantages:**
-- Larger repository size
-- Potential for tighter coupling
-- Build complexity
-
-### Option 2: Multi-Repo (Separate Repositories)
-
-Separate repositories for frontend and backend.
-
-```
-backend-repo/
-├── src/
-├── pom.xml
-└── README.md
-
-frontend-repo/
-├── src/
-├── package.json
-└── README.md
-```
-
-**Advantages:**
-- Independent deployment cycles
-- Clearer ownership boundaries
-- Smaller repository size
-- Language-specific tooling
-
-**Disadvantages:**
-- Coordination overhead for breaking changes
-- Duplicate configuration
-- Version synchronization complexity
-
-**Recommendation:** Use monorepo unless teams are organizationally separate or deployment independence is critical.
+**Considerations to manage:**
+- Repository size grows with both codebases
+- Build configuration requires attention to both stacks
+- Path-based CI triggers should be used to avoid unnecessary builds
 
 ---
 
@@ -119,14 +88,14 @@ backend/
 │   ├── main/
 │   │   ├── java/
 │   │   │   └── com/
-│   │   │       └── company/
-│   │   │           └── projectname/
-│   │   │               ├── ProjectApplication.java
+│   │   │       └── example/
+│   │   │           └── todos/
+│   │   │               ├── TodoApplication.java
 │   │   │               ├── config/              # Application configuration
 │   │   │               │   ├── SecurityConfig.java
 │   │   │               │   ├── DatabaseConfig.java
 │   │   │               │   ├── CorsConfig.java
-│   │   │               │   └── SwaggerConfig.java
+│   │   │               │   └── OpenApiConfig.java
 │   │   │               ├── common/              # Shared utilities
 │   │   │               │   ├── exception/
 │   │   │               │   │   ├── GlobalExceptionHandler.java
@@ -140,23 +109,25 @@ backend/
 │   │   │               │   └── constants/
 │   │   │               │       ├── ErrorMessages.java
 │   │   │               │       └── AppConstants.java
-│   │   │               ├── feature1/            # Feature-based modules
+│   │   │               ├── todo/                # Feature-based modules
 │   │   │               │   ├── controller/
-│   │   │               │   │   └── Feature1Controller.java
+│   │   │               │   │   └── TodoController.java
 │   │   │               │   ├── dto/
-│   │   │               │   │   ├── Feature1Request.java
-│   │   │               │   │   ├── Feature1Response.java
-│   │   │               │   │   └── Feature1Summary.java
+│   │   │               │   │   ├── CreateTodoRequest.java
+│   │   │               │   │   ├── UpdateTodoRequest.java
+│   │   │               │   │   ├── TodoResponse.java
+│   │   │               │   │   └── TodoSummary.java
 │   │   │               │   ├── entity/
-│   │   │               │   │   └── Feature1Entity.java
+│   │   │               │   │   ├── TodoEntity.java
+│   │   │               │   │   └── TodoPriority.java
 │   │   │               │   ├── repository/
-│   │   │               │   │   └── Feature1Repository.java
+│   │   │               │   │   └── TodoRepository.java
 │   │   │               │   ├── service/
-│   │   │               │   │   ├── Feature1Service.java
-│   │   │               │   │   └── Feature1ValidationService.java
+│   │   │               │   │   ├── TodoService.java
+│   │   │               │   │   └── TodoValidationService.java
 │   │   │               │   └── mapper/
-│   │   │               │       └── Feature1Mapper.java
-│   │   │               ├── feature2/
+│   │   │               │       └── TodoMapper.java
+│   │   │               ├── category/
 │   │   │               │   ├── controller/
 │   │   │               │   ├── dto/
 │   │   │               │   ├── entity/
@@ -173,32 +144,32 @@ backend/
 │   │       ├── application-test.yml         # Test profile
 │   │       ├── application-prod.yml         # Production profile
 │   │       ├── db/
-│   │       │   └── migration/               # Flyway/Liquibase migrations
+│   │       │   └── migration/               # Flyway migrations
 │   │       │       ├── V1__initial_schema.sql
 │   │       │       ├── V2__add_users_table.sql
-│   │       │       └── V3__add_feature1_tables.sql
+│   │       │       └── V3__add_todo_tables.sql
 │   │       ├── static/                      # Static resources (if any)
 │   │       └── templates/                   # Email templates, etc.
 │   └── test/
 │       ├── java/
 │       │   └── com/
-│       │       └── company/
-│       │           └── projectname/
-│       │               ├── feature1/
+│       │       └── example/
+│       │           └── todos/
+│       │               ├── todo/
 │       │               │   ├── controller/
-│       │               │   │   └── Feature1ControllerTest.java
+│       │               │   │   └── TodoControllerTest.java
 │       │               │   ├── service/
-│       │               │   │   └── Feature1ServiceTest.java
+│       │               │   │   └── TodoServiceTest.java
 │       │               │   ├── repository/
-│       │               │   │   └── Feature1RepositoryTest.java
+│       │               │   │   └── TodoRepositoryTest.java
 │       │               │   └── integration/
-│       │               │       └── Feature1IntegrationTest.java
+│       │               │       └── TodoIntegrationTest.java
 │       │               └── common/
 │       │                   └── BaseIntegrationTest.java
 │       └── resources/
 │           ├── application-test.yml
 │           └── test-data/
-│               └── feature1-test-data.sql
+│               └── todo-test-data.sql
 ├── build/                                   # Build output (gitignored)
 │   ├── classes/
 │   ├── libs/
@@ -207,8 +178,8 @@ backend/
 │   └── wrapper/
 │       ├── gradle-wrapper.jar
 │       └── gradle-wrapper.properties
-├── build.gradle                             # Gradle build configuration
-├── settings.gradle                          # Gradle settings
+├── build.gradle.kts                         # Gradle build configuration (Kotlin DSL)
+├── settings.gradle.kts                      # Gradle settings
 ├── gradlew                                  # Gradle wrapper script (Unix)
 ├── gradlew.bat                              # Gradle wrapper script (Windows)
 ├── .gitignore
@@ -217,21 +188,21 @@ backend/
 
 ### Feature Module Deep Dive
 
-For complex features with multiple subdomains:
+For complex features with multiple subdomains, the organization is as follows:
 
 ```
-backend/src/main/java/com/company/projectname/
-└── taskmanagement/                          # Feature module
+backend/src/main/java/com/example/todos/
+└── todo/                                    # Feature module
     ├── controller/
-    │   ├── TaskController.java              # Main task operations
-    │   ├── TaskCategoryController.java      # Category management
-    │   └── TaskCommentController.java       # Comments on tasks
+    │   ├── TodoController.java              # Main todo operations
+    │   ├── CategoryController.java          # Category management
+    │   └── CommentController.java           # Comments on todos
     ├── dto/
-    │   ├── task/
-    │   │   ├── CreateTaskRequest.java
-    │   │   ├── UpdateTaskRequest.java
-    │   │   ├── TaskResponse.java
-    │   │   └── TaskSummary.java
+    │   ├── todo/
+    │   │   ├── CreateTodoRequest.java
+    │   │   ├── UpdateTodoRequest.java
+    │   │   ├── TodoResponse.java
+    │   │   └── TodoSummary.java
     │   ├── category/
     │   │   ├── CategoryRequest.java
     │   │   └── CategoryResponse.java
@@ -239,26 +210,26 @@ backend/src/main/java/com/company/projectname/
     │       ├── CommentRequest.java
     │       └── CommentResponse.java
     ├── entity/
-    │   ├── TaskEntity.java
+    │   ├── TodoEntity.java
     │   ├── CategoryEntity.java
     │   ├── CommentEntity.java
-    │   └── TaskPriority.java               # Enums
+    │   └── TodoPriority.java                # Enums
     ├── repository/
-    │   ├── TaskRepository.java
+    │   ├── TodoRepository.java
     │   ├── CategoryRepository.java
     │   ├── CommentRepository.java
     │   └── specification/                   # Custom queries
-    │       └── TaskSpecification.java
+    │       └── TodoSpecification.java
     ├── service/
-    │   ├── TaskService.java
+    │   ├── TodoService.java
     │   ├── CategoryService.java
     │   ├── CommentService.java
     │   └── impl/                            # Service implementations if using interfaces
-    │       ├── TaskServiceImpl.java
+    │       ├── TodoServiceImpl.java
     │       ├── CategoryServiceImpl.java
     │       └── CommentServiceImpl.java
     └── mapper/
-        ├── TaskMapper.java
+        ├── TodoMapper.java
         ├── CategoryMapper.java
         └── CommentMapper.java
 ```
@@ -266,13 +237,13 @@ backend/src/main/java/com/company/projectname/
 ### Configuration Organization
 
 ```
-backend/src/main/java/com/company/projectname/config/
+backend/src/main/java/com/example/todos/config/
 ├── SecurityConfig.java                      # Spring Security configuration
 ├── WebConfig.java                           # Web MVC configuration
 ├── DatabaseConfig.java                      # DataSource and JPA configuration
 ├── CacheConfig.java                         # Redis/Caffeine cache configuration
 ├── AsyncConfig.java                         # Async execution configuration
-├── SwaggerConfig.java                       # API documentation
+├── OpenApiConfig.java                       # OpenAPI/Swagger documentation
 ├── CorsConfig.java                          # CORS policy
 └── properties/                              # Type-safe configuration properties
     ├── AppProperties.java
@@ -282,22 +253,27 @@ backend/src/main/java/com/company/projectname/config/
 
 ### Gradle Configuration Example
 
-**build.gradle:**
+**build.gradle.kts (Kotlin DSL - recommended for type safety):**
 
-```gradle
+```kotlin
 plugins {
-    id 'java'
-    id 'org.springframework.boot' version '3.2.0'
-    id 'io.spring.dependency-management' version '1.1.4'
+    java
+    id("org.springframework.boot") version "3.4.1"
+    id("io.spring.dependency-management") version "1.1.7"
 }
 
-group = 'com.company'
-version = '1.0.0'
-sourceCompatibility = '21'
+group = "com.example"
+version = "1.0.0"
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
 
 configurations {
     compileOnly {
-        extendsFrom annotationProcessor
+        extendsFrom(configurations.annotationProcessor.get())
     }
 }
 
@@ -307,46 +283,52 @@ repositories {
 
 dependencies {
     // Spring Boot starters
-    implementation 'org.springframework.boot:spring-boot-starter-web'
-    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
-    implementation 'org.springframework.boot:spring-boot-starter-security'
-    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation("org.springframework.boot:spring-boot-starter-web")
+    implementation("org.springframework.boot:spring-boot-starter-data-jpa")
+    implementation("org.springframework.boot:spring-boot-starter-security")
+    implementation("org.springframework.boot:spring-boot-starter-validation")
     
     // Database
-    runtimeOnly 'org.postgresql:postgresql'
-    implementation 'org.flywaydb:flyway-core'
+    runtimeOnly("org.postgresql:postgresql")
+    implementation("org.flywaydb:flyway-core")
+    implementation("org.flywaydb:flyway-database-postgresql")
     
     // Lombok
-    compileOnly 'org.projectlombok:lombok'
-    annotationProcessor 'org.projectlombok:lombok'
+    compileOnly("org.projectlombok:lombok")
+    annotationProcessor("org.projectlombok:lombok")
     
     // MapStruct
-    implementation 'org.mapstruct:mapstruct:1.5.5.Final'
-    annotationProcessor 'org.mapstruct:mapstruct-processor:1.5.5.Final'
+    implementation("org.mapstruct:mapstruct:1.6.3")
+    annotationProcessor("org.mapstruct:mapstruct-processor:1.6.3")
+    annotationProcessor("org.projectlombok:lombok-mapstruct-binding:0.2.0")
+    
+    // OpenAPI documentation
+    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.7.0")
     
     // Testing
-    testImplementation 'org.springframework.boot:spring-boot-starter-test'
-    testImplementation 'org.springframework.security:spring-security-test'
-    testImplementation 'org.testcontainers:postgresql'
-    testImplementation 'org.testcontainers:junit-jupiter'
+    testImplementation("org.springframework.boot:spring-boot-starter-test")
+    testImplementation("org.springframework.security:spring-security-test")
+    testImplementation("org.testcontainers:postgresql")
+    testImplementation("org.testcontainers:junit-jupiter")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
-tasks.named('test') {
+tasks.withType<Test> {
     useJUnitPlatform()
 }
 ```
 
-**settings.gradle:**
+**settings.gradle.kts:**
 
-```gradle
-rootProject.name = 'projectname'
+```kotlin
+rootProject.name = "todos"
 ```
 
 ---
 
 ## Frontend Structure (React/TypeScript)
 
-### Feature-Based Organization with MVVM (Recommended for Large Apps)
+### Feature-Based Organization with MVVM
 
 This structure implements MVVM architecture where custom hooks serve as ViewModels, managing presentation logic and state.
 
@@ -359,7 +341,7 @@ frontend/
 │       └── images/
 ├── src/
 │   ├── App.tsx                              # Root component
-│   ├── index.tsx                            # Entry point
+│   ├── main.tsx                             # Entry point
 │   ├── app/                                 # App-level configuration
 │   │   ├── store/                           # Redux/state management (Model layer)
 │   │   │   ├── index.ts
@@ -407,52 +389,52 @@ frontend/
 │   │   │   ├── utils/
 │   │   │   │   └── tokenUtils.ts
 │   │   │   └── index.ts
-│   │   ├── tasks/                           # Task management feature
+│   │   ├── todos/                           # Todo management feature
 │   │   │   ├── components/                  # View layer
-│   │   │   │   ├── TaskList/
-│   │   │   │   │   ├── TaskList.tsx
-│   │   │   │   │   ├── TaskList.test.tsx
-│   │   │   │   │   ├── TaskList.module.css
+│   │   │   │   ├── TodoList/
+│   │   │   │   │   ├── TodoList.tsx
+│   │   │   │   │   ├── TodoList.test.tsx
+│   │   │   │   │   ├── TodoList.module.css
 │   │   │   │   │   └── index.ts
-│   │   │   │   ├── TaskItem/
-│   │   │   │   ├── TaskForm/
-│   │   │   │   │   ├── TaskForm.tsx
-│   │   │   │   │   ├── TaskForm.test.tsx
+│   │   │   │   ├── TodoItem/
+│   │   │   │   ├── TodoForm/
+│   │   │   │   │   ├── TodoForm.tsx
+│   │   │   │   │   ├── TodoForm.test.tsx
 │   │   │   │   │   ├── subforms/           # Nested subforms
-│   │   │   │   │   │   ├── TaskDetailsSubform.tsx
-│   │   │   │   │   │   ├── TaskCategorySubform.tsx
-│   │   │   │   │   │   └── TaskAttachmentsSubform.tsx
+│   │   │   │   │   │   ├── TodoDetailsSubform.tsx
+│   │   │   │   │   │   ├── TodoCategorySubform.tsx
+│   │   │   │   │   │   └── TodoAttachmentsSubform.tsx
 │   │   │   │   │   └── index.ts
-│   │   │   │   ├── TaskFilters/
-│   │   │   │   └── TaskStats/
+│   │   │   │   ├── TodoFilters/
+│   │   │   │   └── TodoStats/
 │   │   │   ├── pages/                       # View layer (page components)
-│   │   │   │   ├── TaskListPage.tsx
-│   │   │   │   ├── TaskDetailPage.tsx
-│   │   │   │   └── TaskEditPage.tsx
+│   │   │   │   ├── TodoListPage.tsx
+│   │   │   │   ├── TodoDetailPage.tsx
+│   │   │   │   └── TodoEditPage.tsx
 │   │   │   ├── viewmodels/                  # ViewModel layer
-│   │   │   │   ├── useTaskListViewModel.ts  # List ViewModel
-│   │   │   │   ├── useTaskFormViewModel.ts  # Form ViewModel
-│   │   │   │   ├── useTaskDetailViewModel.ts # Detail ViewModel
-│   │   │   │   └── useTaskFiltersViewModel.ts # Filters ViewModel
+│   │   │   │   ├── useTodoListViewModel.ts  # List ViewModel
+│   │   │   │   ├── useTodoFormViewModel.ts  # Form ViewModel
+│   │   │   │   ├── useTodoDetailViewModel.ts # Detail ViewModel
+│   │   │   │   └── useTodoFiltersViewModel.ts # Filters ViewModel
 │   │   │   ├── hooks/                       # Additional custom hooks
-│   │   │   │   ├── useTaskPagination.ts
-│   │   │   │   └── useTaskSort.ts
+│   │   │   │   ├── useTodoPagination.ts
+│   │   │   │   └── useTodoSort.ts
 │   │   │   ├── models/                      # Model layer
 │   │   │   │   ├── services/
-│   │   │   │   │   ├── taskService.ts
+│   │   │   │   │   ├── todoService.ts
 │   │   │   │   │   └── categoryService.ts
 │   │   │   │   ├── store/
-│   │   │   │   │   ├── taskSlice.ts
-│   │   │   │   │   ├── taskSelectors.ts
-│   │   │   │   │   └── taskThunks.ts
+│   │   │   │   │   ├── todoSlice.ts
+│   │   │   │   │   ├── todoSelectors.ts
+│   │   │   │   │   └── todoThunks.ts
 │   │   │   │   └── validation/
-│   │   │   │       └── taskValidation.ts
+│   │   │   │       └── todoValidation.ts
 │   │   │   ├── types/
-│   │   │   │   ├── task.types.ts
+│   │   │   │   ├── todo.types.ts
 │   │   │   │   ├── category.types.ts
 │   │   │   │   └── api.types.ts
 │   │   │   ├── utils/
-│   │   │   │   └── taskHelpers.ts
+│   │   │   │   └── todoHelpers.ts
 │   │   │   └── index.ts
 │   │   ├── dashboard/
 │   │   │   ├── components/
@@ -461,8 +443,8 @@ frontend/
 │   │   │   │   └── useDashboardViewModel.ts
 │   │   │   ├── models/
 │   │   │   └── widgets/                     # Dashboard-specific widgets
-│   │   │       ├── RecentTasksWidget/
-│   │   │       ├── TaskStatsWidget/
+│   │   │       ├── RecentTodosWidget/
+│   │   │       ├── TodoStatsWidget/
 │   │   │       └── ActivityFeedWidget/
 │   │   └── profile/
 │   │       ├── components/
@@ -551,8 +533,10 @@ frontend/
 ├── package.json
 ├── yarn.lock                                # Yarn lock file
 ├── tsconfig.json
-├── vite.config.ts                           # or webpack.config.js
-├── .eslintrc.json
+├── vite.config.ts
+├── vitest.config.ts                         # Vitest configuration
+├── playwright.config.ts                     # E2E test configuration
+├── eslint.config.js                         # ESLint flat config
 ├── .prettierrc
 ├── .gitignore
 └── README.md
@@ -639,44 +623,44 @@ The frontend follows MVVM principles with React-specific implementation:
 **Example ViewModel Structure:**
 
 ```typescript
-// src/features/tasks/viewmodels/useTaskListViewModel.ts
+// src/features/todos/viewmodels/useTodoListViewModel.ts
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useAppDispatch, useAppSelector } from '@app/store/hooks';
-import { fetchTasks, selectFilteredTasks, selectTasksLoading } from '../models/store/taskSlice';
-import { taskService } from '../models/services/taskService';
-import type { Task, TaskFilter } from '../types/task.types';
+import { fetchTodos, selectFilteredTodos, selectTodosLoading } from '../models/store/todoSlice';
+import { todoService } from '../models/services/todoService';
+import type { Todo, TodoFilter } from '../types/todo.types';
 
-export function useTaskListViewModel() {
+export function useTodoListViewModel() {
   // State from Model layer
   const dispatch = useAppDispatch();
-  const tasks = useAppSelector(selectFilteredTasks);
-  const loading = useAppSelector(selectTasksLoading);
+  const todos = useAppSelector(selectFilteredTodos);
+  const loading = useAppSelector(selectTodosLoading);
   
   // ViewModel-specific state
-  const [filter, setFilter] = useState<TaskFilter>('all');
+  const [filter, setFilter] = useState<TodoFilter>('all');
   const [searchTerm, setSearchTerm] = useState('');
   
   // Computed properties for View
-  const filteredTasks = useMemo(() => {
-    return tasks.filter(task => 
-      task.title.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredTodos = useMemo(() => {
+    return todos.filter(todo => 
+      todo.text.toLowerCase().includes(searchTerm.toLowerCase())
     );
-  }, [tasks, searchTerm]);
+  }, [todos, searchTerm]);
   
   const activeCount = useMemo(() => {
-    return tasks.filter(t => !t.completed).length;
-  }, [tasks]);
+    return todos.filter(t => !t.completed).length;
+  }, [todos]);
   
   const completedCount = useMemo(() => {
-    return tasks.filter(t => t.completed).length;
-  }, [tasks]);
+    return todos.filter(t => t.completed).length;
+  }, [todos]);
   
   // Commands for View to invoke
-  const loadTasks = useCallback(() => {
-    dispatch(fetchTasks());
+  const loadTodos = useCallback(() => {
+    dispatch(fetchTodos());
   }, [dispatch]);
   
-  const handleFilterChange = useCallback((newFilter: TaskFilter) => {
+  const handleFilterChange = useCallback((newFilter: TodoFilter) => {
     setFilter(newFilter);
   }, []);
   
@@ -684,20 +668,20 @@ export function useTaskListViewModel() {
     setSearchTerm(term);
   }, []);
   
-  const deleteTask = useCallback(async (taskId: string) => {
-    await taskService.deleteTask(taskId);
-    dispatch(fetchTasks());
+  const deleteTodo = useCallback(async (todoId: string) => {
+    await todoService.deleteTodo(todoId);
+    dispatch(fetchTodos());
   }, [dispatch]);
   
   // Load data on mount
   useEffect(() => {
-    loadTasks();
-  }, [loadTasks]);
+    loadTodos();
+  }, [loadTodos]);
   
   // Return ViewModel interface
   return {
     // State
-    tasks: filteredTasks,
+    todos: filteredTodos,
     loading,
     filter,
     searchTerm,
@@ -705,10 +689,10 @@ export function useTaskListViewModel() {
     completedCount,
     
     // Commands
-    loadTasks,
+    loadTodos,
     handleFilterChange,
     handleSearchChange,
-    deleteTask,
+    deleteTodo,
   };
 }
 ```
@@ -716,11 +700,13 @@ export function useTaskListViewModel() {
 **Example View Using ViewModel:**
 
 ```typescript
-// src/features/tasks/components/TaskList/TaskList.tsx
-import { useTaskListViewModel } from '../../viewmodels/useTaskListViewModel';
+// src/features/todos/components/TodoList/TodoList.tsx
+import { useTodoListViewModel } from '../../viewmodels/useTodoListViewModel';
+import { LoadingSpinner } from '@shared/components/LoadingSpinner';
+import { TodoItem } from '../TodoItem';
 
-export function TaskList() {
-  const viewModel = useTaskListViewModel();
+export function TodoList() {
+  const viewModel = useTodoListViewModel();
   
   if (viewModel.loading) {
     return <LoadingSpinner />;
@@ -732,12 +718,12 @@ export function TaskList() {
         type="text"
         value={viewModel.searchTerm}
         onChange={(e) => viewModel.handleSearchChange(e.target.value)}
-        placeholder="Search tasks..."
+        placeholder="Search todos..."
       />
       
       <div>
         <button onClick={() => viewModel.handleFilterChange('all')}>
-          All ({viewModel.tasks.length})
+          All ({viewModel.todos.length})
         </button>
         <button onClick={() => viewModel.handleFilterChange('active')}>
           Active ({viewModel.activeCount})
@@ -748,11 +734,11 @@ export function TaskList() {
       </div>
       
       <ul>
-        {viewModel.tasks.map(task => (
-          <TaskItem
-            key={task.id}
-            task={task}
-            onDelete={viewModel.deleteTask}
+        {viewModel.todos.map(todo => (
+          <TodoItem
+            key={todo.id}
+            todo={todo}
+            onDelete={viewModel.deleteTodo}
           />
         ))}
       </ul>
@@ -764,32 +750,32 @@ export function TaskList() {
 ### Page Organization for Large Applications
 
 ```
-src/features/tasks/pages/
-├── TaskListPage/
-│   ├── TaskListPage.tsx
-│   ├── TaskListPage.test.tsx
+src/features/todos/pages/
+├── TodoListPage/
+│   ├── TodoListPage.tsx
+│   ├── TodoListPage.test.tsx
 │   ├── components/                          # Page-specific components
-│   │   ├── TaskListHeader.tsx
-│   │   ├── TaskListToolbar.tsx
-│   │   └── EmptyTasksPlaceholder.tsx
+│   │   ├── TodoListHeader.tsx
+│   │   ├── TodoListToolbar.tsx
+│   │   └── EmptyTodosPlaceholder.tsx
 │   ├── hooks/
-│   │   ├── useTaskListPage.ts               # Page-specific logic
-│   │   └── useTaskListFilters.ts
+│   │   ├── useTodoListPage.ts               # Page-specific logic
+│   │   └── useTodoListFilters.ts
 │   └── index.ts
-├── TaskDetailPage/
-│   ├── TaskDetailPage.tsx
-│   ├── TaskDetailPage.test.tsx
+├── TodoDetailPage/
+│   ├── TodoDetailPage.tsx
+│   ├── TodoDetailPage.test.tsx
 │   ├── components/
-│   │   ├── TaskHeader.tsx
-│   │   ├── TaskMetadata.tsx
-│   │   ├── TaskComments.tsx
-│   │   └── TaskActivityLog.tsx
+│   │   ├── TodoHeader.tsx
+│   │   ├── TodoMetadata.tsx
+│   │   ├── TodoComments.tsx
+│   │   └── TodoActivityLog.tsx
 │   ├── hooks/
-│   │   └── useTaskDetailPage.ts
+│   │   └── useTodoDetailPage.ts
 │   └── index.ts
-└── TaskEditPage/
-    ├── TaskEditPage.tsx
-    ├── TaskEditPage.test.tsx
+└── TodoEditPage/
+    ├── TodoEditPage.tsx
+    ├── TodoEditPage.test.tsx
     └── index.ts
 ```
 
@@ -799,52 +785,51 @@ src/features/tasks/pages/
 
 ```json
 {
-  "name": "projectname-frontend",
+  "name": "todos-frontend",
   "version": "1.0.0",
-  "packageManager": "yarn@4.0.0",
+  "type": "module",
+  "packageManager": "yarn@4.5.3",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "tsc -b && vite build",
     "preview": "vite preview",
-    "test": "jest",
-    "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage",
-    "test:viewmodels": "jest --testPathPattern=viewmodels",
-    "test:components": "jest --testPathPattern=components",
-    "test:integration": "jest --testPathPattern=integration",
+    "test": "vitest",
+    "test:watch": "vitest watch",
+    "test:coverage": "vitest --coverage",
+    "test:viewmodels": "vitest --testPathPattern=viewmodels",
+    "test:components": "vitest --testPathPattern=components",
     "test:e2e": "playwright test",
-    "lint": "eslint src --ext ts,tsx",
-    "lint:fix": "eslint src --ext ts,tsx --fix",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
     "format": "prettier --write \"src/**/*.{ts,tsx,css}\"",
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "react-router-dom": "^6.20.0",
-    "@reduxjs/toolkit": "^2.0.0",
-    "react-redux": "^9.0.0",
-    "axios": "^1.6.0",
-    "zod": "^3.22.0",
-    "date-fns": "^3.0.0"
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^7.1.1",
+    "@reduxjs/toolkit": "^2.5.0",
+    "react-redux": "^9.2.0",
+    "axios": "^1.7.9",
+    "zod": "^3.24.1",
+    "date-fns": "^4.1.0"
   },
   "devDependencies": {
-    "@types/react": "^18.2.0",
-    "@types/react-dom": "^18.2.0",
-    "@types/jest": "^29.5.0",
-    "@testing-library/react": "^14.0.0",
-    "@testing-library/jest-dom": "^6.0.0",
-    "@testing-library/user-event": "^14.0.0",
-    "@testing-library/react-hooks": "^8.0.0",
-    "typescript": "^5.3.0",
-    "vite": "^5.0.0",
-    "@vitejs/plugin-react": "^4.2.0",
-    "jest": "^29.7.0",
-    "jest-environment-jsdom": "^29.7.0",
-    "eslint": "^8.55.0",
-    "prettier": "^3.1.0",
-    "msw": "^2.0.0",
-    "@playwright/test": "^1.40.0"
+    "@types/react": "^18.3.17",
+    "@types/react-dom": "^18.3.5",
+    "@testing-library/react": "^16.1.0",
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/user-event": "^14.5.2",
+    "typescript": "~5.7.2",
+    "vite": "^6.0.7",
+    "@vitejs/plugin-react": "^4.3.4",
+    "vitest": "^2.1.8",
+    "@vitest/coverage-v8": "^2.1.8",
+    "jsdom": "^25.0.1",
+    "eslint": "^9.17.0",
+    "prettier": "^3.4.2",
+    "msw": "^2.7.0",
+    "@playwright/test": "^1.49.1"
   }
 }
 ```
@@ -856,19 +841,19 @@ src/features/tasks/pages/
 ### Backend Testing Structure
 
 ```
-backend/src/test/java/com/company/projectname/
-├── feature1/
+backend/src/test/java/com/example/todos/
+├── todo/
 │   ├── controller/
-│   │   └── Feature1ControllerTest.java      # Controller layer tests
+│   │   └── TodoControllerTest.java          # Controller layer tests
 │   ├── service/
-│   │   └── Feature1ServiceTest.java         # Service layer unit tests
+│   │   └── TodoServiceTest.java             # Service layer unit tests
 │   ├── repository/
-│   │   └── Feature1RepositoryTest.java      # Repository tests
+│   │   └── TodoRepositoryTest.java          # Repository tests
 │   ├── mapper/
-│   │   └── Feature1MapperTest.java          # Mapper tests
+│   │   └── TodoMapperTest.java              # Mapper tests
 │   └── integration/
-│       ├── Feature1IntegrationTest.java     # End-to-end feature tests
-│       └── Feature1ApiTest.java             # API contract tests
+│       ├── TodoIntegrationTest.java         # End-to-end feature tests
+│       └── TodoApiTest.java                 # API contract tests
 ├── common/
 │   ├── BaseIntegrationTest.java             # Base class for integration tests
 │   ├── TestDataBuilder.java                 # Test data builders
@@ -885,52 +870,52 @@ backend/src/test/resources/
 ├── application-test.yml                     # Test configuration
 ├── test-data/
 │   ├── users.sql                            # Test data SQL
-│   ├── tasks.sql
+│   ├── todos.sql
 │   └── categories.sql
 ├── fixtures/                                # JSON test fixtures
-│   ├── valid-task-request.json
-│   └── invalid-task-request.json
+│   ├── valid-todo-request.json
+│   └── invalid-todo-request.json
 └── contracts/                               # API contract definitions
-    └── task-api-contract.json
+    └── todo-api-contract.json
 ```
 
 ### Frontend Testing Structure
 
 ```
-src/features/tasks/
+src/features/todos/
 ├── components/
-│   ├── TaskList/
-│   │   ├── TaskList.tsx
-│   │   ├── TaskList.test.tsx                # Component unit tests (View)
-│   │   └── TaskList.integration.test.tsx   # Component integration tests
-│   └── TaskForm/
-│       ├── TaskForm.tsx
-│       ├── TaskForm.test.tsx
+│   ├── TodoList/
+│   │   ├── TodoList.tsx
+│   │   ├── TodoList.test.tsx                # Component unit tests (View)
+│   │   └── TodoList.integration.test.tsx    # Component integration tests
+│   └── TodoForm/
+│       ├── TodoForm.tsx
+│       ├── TodoForm.test.tsx
 │       └── subforms/
-│           └── TaskDetailsSubform/
-│               ├── TaskDetailsSubform.tsx
-│               └── TaskDetailsSubform.test.tsx
+│           └── TodoDetailsSubform/
+│               ├── TodoDetailsSubform.tsx
+│               └── TodoDetailsSubform.test.tsx
 ├── viewmodels/
-│   ├── useTaskListViewModel.ts
-│   ├── useTaskListViewModel.test.ts         # ViewModel tests
-│   ├── useTaskFormViewModel.ts
-│   └── useTaskFormViewModel.test.ts
+│   ├── useTodoListViewModel.ts
+│   ├── useTodoListViewModel.test.ts         # ViewModel tests
+│   ├── useTodoFormViewModel.ts
+│   └── useTodoFormViewModel.test.ts
 ├── hooks/
-│   ├── useTaskPagination.ts
-│   └── useTaskPagination.test.ts            # Hook tests
+│   ├── useTodoPagination.ts
+│   └── useTodoPagination.test.ts            # Hook tests
 ├── models/
 │   ├── services/
-│   │   ├── taskService.ts
-│   │   └── taskService.test.ts              # Service tests (Model)
+│   │   ├── todoService.ts
+│   │   └── todoService.test.ts              # Service tests (Model)
 │   ├── store/
-│   │   ├── taskSlice.ts
-│   │   └── taskSlice.test.ts                # Redux slice tests (Model)
+│   │   ├── todoSlice.ts
+│   │   └── todoSlice.test.ts                # Redux slice tests (Model)
 │   └── validation/
-│       ├── taskValidation.ts
-│       └── taskValidation.test.ts           # Validation tests (Model)
+│       ├── todoValidation.ts
+│       └── todoValidation.test.ts           # Validation tests (Model)
 └── __tests__/                               # Feature-level tests
-    ├── tasks.integration.test.tsx           # Feature integration tests
-    └── tasks.e2e.test.tsx                   # E2E tests (or in separate e2e/ directory)
+    ├── todos.integration.test.tsx           # Feature integration tests
+    └── todos.e2e.test.tsx                   # E2E tests (or in separate e2e/ directory)
 ```
 
 **Global Test Setup:**
@@ -941,7 +926,7 @@ tests/
 ├── mocks/
 │   ├── handlers/                            # MSW request handlers
 │   │   ├── authHandlers.ts
-│   │   ├── taskHandlers.ts
+│   │   ├── todoHandlers.ts
 │   │   └── index.ts
 │   └── server.ts                            # MSW server setup
 ├── utils/
@@ -950,64 +935,63 @@ tests/
 │   ├── mockViewModels.ts                    # Mock ViewModel factories
 │   └── mockData.ts                          # Mock data generators
 └── fixtures/
-    ├── tasks.ts                             # Test data fixtures
+    ├── todos.ts                             # Test data fixtures
     └── users.ts
 ```
 
 **ViewModel Testing Example:**
 
 ```typescript
-// src/features/tasks/viewmodels/useTaskListViewModel.test.ts
+// src/features/todos/viewmodels/useTodoListViewModel.test.ts
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { Provider } from 'react-redux';
 import { configureStore } from '@reduxjs/toolkit';
-import { useTaskListViewModel } from './useTaskListViewModel';
-import { taskSlice } from '../models/store/taskSlice';
-import * as taskService from '../models/services/taskService';
+import { useTodoListViewModel } from './useTodoListViewModel';
+import { todoSlice } from '../models/store/todoSlice';
+import * as todoService from '../models/services/todoService';
 
-jest.mock('../models/services/taskService');
+vi.mock('../models/services/todoService');
 
-describe('useTaskListViewModel', () => {
+describe('useTodoListViewModel', () => {
   let store;
   
   beforeEach(() => {
     store = configureStore({
-      reducer: { tasks: taskSlice.reducer }
+      reducer: { todos: todoSlice.reducer }
     });
   });
   
-  it('loads tasks on mount', async () => {
-    const mockTasks = [
-      { id: '1', title: 'Task 1', completed: false },
-      { id: '2', title: 'Task 2', completed: true }
+  it('loads todos on mount', async () => {
+    const mockTodos = [
+      { id: '1', text: 'Todo 1', completed: false },
+      { id: '2', text: 'Todo 2', completed: true }
     ];
     
-    (taskService.getTasks as jest.Mock).mockResolvedValue(mockTasks);
+    vi.mocked(todoService.getTodos).mockResolvedValue(mockTodos);
     
     const wrapper = ({ children }) => (
       <Provider store={store}>{children}</Provider>
     );
     
-    const { result } = renderHook(() => useTaskListViewModel(), { wrapper });
+    const { result } = renderHook(() => useTodoListViewModel(), { wrapper });
     
     await waitFor(() => {
-      expect(result.current.tasks).toHaveLength(2);
+      expect(result.current.todos).toHaveLength(2);
     });
   });
   
-  it('filters tasks by search term', () => {
+  it('filters todos by search term', async () => {
     const wrapper = ({ children }) => (
       <Provider store={store}>{children}</Provider>
     );
     
-    const { result } = renderHook(() => useTaskListViewModel(), { wrapper });
+    const { result } = renderHook(() => useTodoListViewModel(), { wrapper });
     
     act(() => {
-      result.current.handleSearchChange('Task 1');
+      result.current.handleSearchChange('Todo 1');
     });
     
-    expect(result.current.tasks).toHaveLength(1);
-    expect(result.current.tasks[0].title).toBe('Task 1');
+    expect(result.current.searchTerm).toBe('Todo 1');
   });
   
   it('calculates active and completed counts correctly', () => {
@@ -1016,13 +1000,13 @@ describe('useTaskListViewModel', () => {
 });
 ```
 
-**E2E Testing Structure (Cypress/Playwright):**
+**E2E Testing Structure (Playwright):**
 
 ```
 frontend/
-└── e2e/                                     # Or cypress/ for Cypress
+└── e2e/
     ├── fixtures/
-    │   ├── tasks.json
+    │   ├── todos.json
     │   └── users.json
     ├── support/
     │   ├── commands.ts                      # Custom commands
@@ -1031,12 +1015,12 @@ frontend/
         ├── auth/
         │   ├── login.spec.ts
         │   └── registration.spec.ts
-        ├── tasks/
-        │   ├── task-creation.spec.ts
-        │   ├── task-editing.spec.ts
-        │   └── task-filtering.spec.ts
+        ├── todos/
+        │   ├── todo-creation.spec.ts
+        │   ├── todo-editing.spec.ts
+        │   └── todo-filtering.spec.ts
         └── workflows/
-            └── complete-task-workflow.spec.ts
+            └── complete-todo-workflow.spec.ts
 ```
 
 ---
@@ -1054,7 +1038,7 @@ src/shared/utils/api/
 │   └── loggingInterceptor.ts                # Request/response logging
 ├── endpoints/
 │   ├── authEndpoints.ts                     # Auth API endpoints
-│   ├── taskEndpoints.ts                     # Task API endpoints
+│   ├── todoEndpoints.ts                     # Todo API endpoints
 │   └── userEndpoints.ts                     # User API endpoints
 └── types/
     ├── apiResponse.types.ts                 # Standard response types
@@ -1069,17 +1053,17 @@ src/shared/types/
 ├── common.types.ts                          # Common utility types
 ├── entities/                                # Domain entity types
 │   ├── user.types.ts
-│   ├── task.types.ts
+│   ├── todo.types.ts
 │   └── category.types.ts
 ├── dto/                                     # Data transfer objects
 │   ├── requests/
-│   │   ├── createTask.dto.ts
-│   │   └── updateTask.dto.ts
+│   │   ├── createTodo.dto.ts
+│   │   └── updateTodo.dto.ts
 │   └── responses/
-│       ├── taskResponse.dto.ts
-│       └── taskSummary.dto.ts
+│       ├── todoResponse.dto.ts
+│       └── todoSummary.dto.ts
 └── enums/
-    ├── taskPriority.enum.ts
+    ├── todoPriority.enum.ts
     └── userRole.enum.ts
 ```
 
@@ -1121,15 +1105,15 @@ src/shared/components/forms/
 
 1. **File count exceeds 30-40 files** in a single feature directory
 2. **Multiple distinct subdomains** within the feature
-3. **Different teams** working on different aspects
+3. **Different team members** working on different aspects
 4. **Independent deployment** would be beneficial
 5. **ViewModel layer becomes too complex** (5+ ViewModels per feature)
 
-**Example: Splitting a large "tasks" feature:**
+**Example: Splitting a large "todos" feature:**
 
 ```
 Before:
-src/features/tasks/                          # Too large, multiple concerns
+src/features/todos/                          # Too large, multiple concerns
 ├── components/
 ├── viewmodels/                              # 8+ ViewModels
 ├── models/
@@ -1137,33 +1121,33 @@ src/features/tasks/                          # Too large, multiple concerns
 
 After:
 src/features/
-├── task-management/                         # Core task CRUD
+├── todo-management/                         # Core todo CRUD
 │   ├── components/
 │   ├── viewmodels/
-│   │   ├── useTaskListViewModel.ts
-│   │   └── useTaskFormViewModel.ts
+│   │   ├── useTodoListViewModel.ts
+│   │   └── useTodoFormViewModel.ts
 │   ├── models/
 │   ├── pages/
 │   └── services/
-├── task-categories/                         # Category management
+├── todo-categories/                         # Category management
 │   ├── components/
 │   ├── viewmodels/
 │   │   └── useCategoryViewModel.ts
 │   ├── models/
 │   ├── pages/
 │   └── services/
-├── task-comments/                           # Comments and discussions
+├── todo-comments/                           # Comments and discussions
 │   ├── components/
 │   ├── viewmodels/
 │   │   └── useCommentsViewModel.ts
 │   ├── models/
 │   ├── pages/
 │   └── services/
-└── task-analytics/                          # Reporting and analytics
+└── todo-analytics/                          # Reporting and analytics
     ├── components/
     ├── viewmodels/
-    │   ├── useTaskStatsViewModel.ts
-    │   └── useTaskReportsViewModel.ts
+    │   ├── useTodoStatsViewModel.ts
+    │   └── useTodoReportsViewModel.ts
     ├── models/
     ├── pages/
     └── services/
@@ -1171,7 +1155,7 @@ src/features/
 
 ### Component Library Extraction
 
-When shared components reach critical mass, extract to a separate package:
+When shared components reach critical mass, they should be extracted to a separate package:
 
 ```
 packages/
@@ -1190,10 +1174,10 @@ packages/
 
 ### Domain-Driven Design (DDD) Structure
 
-For very large applications, organize by bounded context:
+For very large applications, organization by bounded context is recommended:
 
 ```
-backend/src/main/java/com/company/projectname/
+backend/src/main/java/com/example/todos/
 ├── shared/                                  # Shared kernel
 │   ├── domain/
 │   ├── infrastructure/
@@ -1209,7 +1193,7 @@ backend/src/main/java/com/company/projectname/
 │   └── infrastructure/
 │       ├── persistence/
 │       └── api/
-└── taskmanagement/                          # Bounded context
+└── todomanagement/                          # Bounded context
     ├── domain/
     ├── application/
     └── infrastructure/
@@ -1221,24 +1205,24 @@ backend/src/main/java/com/company/projectname/
 
 ### Backend: Package by Layer vs Package by Feature
 
-**Package by Layer (Not Recommended for Large Apps):**
+**Package by Layer (Not Recommended):**
 
 ```
-com/company/projectname/
+com/example/todos/
 ├── controller/
-│   ├── TaskController.java
+│   ├── TodoController.java
 │   ├── UserController.java
 │   └── CategoryController.java
 ├── service/
-│   ├── TaskService.java
+│   ├── TodoService.java
 │   ├── UserService.java
 │   └── CategoryService.java
 ├── repository/
-│   ├── TaskRepository.java
+│   ├── TodoRepository.java
 │   ├── UserRepository.java
 │   └── CategoryRepository.java
 └── entity/
-    ├── TaskEntity.java
+    ├── TodoEntity.java
     ├── UserEntity.java
     └── CategoryEntity.java
 ```
@@ -1246,12 +1230,12 @@ com/company/projectname/
 **Package by Feature (Recommended):**
 
 ```
-com/company/projectname/
-├── task/
-│   ├── TaskController.java
-│   ├── TaskService.java
-│   ├── TaskRepository.java
-│   └── TaskEntity.java
+com/example/todos/
+├── todo/
+│   ├── TodoController.java
+│   ├── TodoService.java
+│   ├── TodoRepository.java
+│   └── TodoEntity.java
 ├── user/
 │   ├── UserController.java
 │   ├── UserService.java
@@ -1266,14 +1250,14 @@ com/company/projectname/
 
 ### Frontend: Component Organization Patterns
 
-**Flat Components (Anti-Pattern for Large Apps):**
+**Flat Components (Anti-Pattern):**
 
 ```
 src/components/
-├── TaskList.tsx
-├── TaskItem.tsx
-├── TaskForm.tsx
-├── TaskFilters.tsx
+├── TodoList.tsx
+├── TodoItem.tsx
+├── TodoForm.tsx
+├── TodoFilters.tsx
 ├── UserProfile.tsx
 ├── UserSettings.tsx
 └── ... (100+ components)
@@ -1284,11 +1268,11 @@ src/components/
 ```
 src/
 ├── features/
-│   ├── tasks/
+│   ├── todos/
 │   │   └── components/
-│   │       ├── TaskList/
-│   │       ├── TaskItem/
-│   │       └── TaskForm/
+│   │       ├── TodoList/
+│   │       ├── TodoItem/
+│   │       └── TodoForm/
 │   └── users/
 │       └── components/
 │           ├── UserProfile/
@@ -1301,7 +1285,7 @@ src/
 
 ### Absolute Imports Configuration
 
-Configure absolute imports to avoid deep relative paths:
+Absolute imports should be configured to avoid deep relative paths:
 
 **TypeScript configuration (tsconfig.json):**
 
@@ -1419,15 +1403,15 @@ backend/
     ├── classes/
     ├── resources/
     ├── libs/
-    │   ├── projectname-1.0.0.jar
-    │   └── projectname-1.0.0-sources.jar
+    │   ├── todos-1.0.0.jar
+    │   └── todos-1.0.0-sources.jar
     ├── reports/
     │   ├── tests/
     │   └── jacoco/
     └── test-results/
 
 frontend/
-└── dist/                                    # Vite/Webpack build output
+└── dist/                                    # Vite build output
     ├── assets/
     │   ├── index.[hash].js
     │   ├── index.[hash].css
@@ -1444,20 +1428,20 @@ frontend/
 **Problem:**
 
 ```
-src/features/tasks/components/forms/complex/subforms/nested/parts/fields/inputs/
-└── TaskTitleInput.tsx                       # 10 levels deep!
+src/features/todos/components/forms/complex/subforms/nested/parts/fields/inputs/
+└── TodoTitleInput.tsx                       # 10 levels deep!
 ```
 
 **Solution:**
 
 ```
-src/features/tasks/components/
-├── TaskForm/
-│   ├── TaskForm.tsx
+src/features/todos/components/
+├── TodoForm/
+│   ├── TodoForm.tsx
 │   └── subforms/
-│       └── TaskDetailsSubform.tsx
-└── TaskTitleInput/
-    └── TaskTitleInput.tsx                   # Flatten structure
+│       └── TodoDetailsSubform.tsx
+└── TodoTitleInput/
+    └── TodoTitleInput.tsx                   # Flatten structure
 ```
 
 ### 2. Circular Dependencies
@@ -1465,11 +1449,11 @@ src/features/tasks/components/
 **Problem:**
 
 ```
-// features/tasks/services/taskService.ts
+// features/todos/services/todoService.ts
 import { userService } from '@features/users/services/userService';
 
 // features/users/services/userService.ts
-import { taskService } from '@features/tasks/services/taskService';
+import { todoService } from '@features/todos/services/todoService';
 ```
 
 **Solution:**
@@ -1477,10 +1461,10 @@ import { taskService } from '@features/tasks/services/taskService';
 Extract shared logic to a separate service:
 
 ```
-// shared/services/taskUserService.ts
-export class TaskUserService {
+// shared/services/todoUserService.ts
+export class TodoUserService {
   constructor(
-    private taskService: TaskService,
+    private todoService: TodoService,
     private userService: UserService
   ) {}
 }
@@ -1521,18 +1505,18 @@ src/shared/components/
 
 ```
 src/features/
-├── TaskManagement/                          # PascalCase
+├── TodoManagement/                          # PascalCase
 ├── user-profile/                            # kebab-case
 └── shopping_cart/                           # snake_case
 ```
 
 **Solution:**
 
-Choose one convention and enforce it:
+Use kebab-case for directories consistently:
 
 ```
 src/features/
-├── task-management/                         # kebab-case for directories
+├── todo-management/                         # kebab-case for directories
 ├── user-profile/
 └── shopping-cart/
 ```
@@ -1542,9 +1526,9 @@ src/features/
 **Problem:**
 
 ```
-// In TaskList.tsx
-import { TaskItem } from './TaskItem/TaskItem';
-import { TaskFilters } from './TaskFilters/TaskFilters';
+// In TodoList.tsx
+import { TodoItem } from './TodoItem/TodoItem';
+import { TodoFilters } from './TodoFilters/TodoFilters';
 ```
 
 **Solution:**
@@ -1552,12 +1536,12 @@ import { TaskFilters } from './TaskFilters/TaskFilters';
 Add index.ts files for cleaner imports:
 
 ```
-// TaskItem/index.ts
-export { TaskItem } from './TaskItem';
+// TodoItem/index.ts
+export { TodoItem } from './TodoItem';
 
-// In TaskList.tsx
-import { TaskItem } from './TaskItem';
-import { TaskFilters } from './TaskFilters';
+// In TodoList.tsx
+import { TodoItem } from './TodoItem';
+import { TodoFilters } from './TodoFilters';
 ```
 
 ### 6. Mixing Concerns in Feature Modules
@@ -1565,12 +1549,12 @@ import { TaskFilters } from './TaskFilters';
 **Problem:**
 
 ```
-src/features/tasks/
+src/features/todos/
 ├── components/
-│   ├── TaskList.tsx
-│   └── UserAvatar.tsx                       # User concern, not task
+│   ├── TodoList.tsx
+│   └── UserAvatar.tsx                       # User concern, not todo
 └── services/
-    └── authService.ts                       # Auth concern, not task
+    └── authService.ts                       # Auth concern, not todo
 ```
 
 **Solution:**
@@ -1578,9 +1562,9 @@ src/features/tasks/
 Move to appropriate locations:
 
 ```
-src/features/tasks/
+src/features/todos/
 ├── components/
-│   └── TaskList.tsx
+│   └── TodoList.tsx
 
 src/features/users/
 └── components/
@@ -1596,7 +1580,7 @@ src/features/auth/
 **Problem:**
 
 ```
-src/features/tasks/utils/dateUtils.ts
+src/features/todos/utils/dateUtils.ts
 src/features/users/utils/dateUtils.ts
 src/features/projects/utils/dateUtils.ts     # Same code repeated
 ```
@@ -1615,14 +1599,14 @@ src/shared/utils/formatting/dateFormatters.ts
 
 ```typescript
 // Component contains business logic
-export function TaskList() {
-  const [tasks, setTasks] = useState<Task[]>([]);
+export function TodoList() {
+  const [todos, setTodos] = useState<Todo[]>([]);
   const [loading, setLoading] = useState(false);
   
-  const loadTasks = async () => {
+  const loadTodos = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/tasks');
+      const response = await fetch('/api/todos');
       const data = await response.json();
       
       // Business logic in View
@@ -1631,7 +1615,7 @@ export function TaskList() {
         a.priority === 'high' ? -1 : 1
       );
       
-      setTasks(sorted);
+      setTodos(sorted);
     } catch (error) {
       console.error(error);
     } finally {
@@ -1639,7 +1623,7 @@ export function TaskList() {
     }
   };
   
-  return <div>{/* Render tasks */}</div>;
+  return <div>{/* Render todos */}</div>;
 }
 ```
 
@@ -1648,30 +1632,30 @@ export function TaskList() {
 Extract to ViewModel:
 
 ```typescript
-// viewmodels/useTaskListViewModel.ts
-export function useTaskListViewModel() {
+// viewmodels/useTodoListViewModel.ts
+export function useTodoListViewModel() {
   const dispatch = useAppDispatch();
-  const tasks = useAppSelector(selectFilteredTasks);
-  const loading = useAppSelector(selectTasksLoading);
+  const todos = useAppSelector(selectFilteredTodos);
+  const loading = useAppSelector(selectTodosLoading);
   
-  const sortedTasks = useMemo(() => {
-    return [...tasks].sort((a, b) => 
+  const sortedTodos = useMemo(() => {
+    return [...todos].sort((a, b) => 
       a.priority === 'high' ? -1 : 1
     );
-  }, [tasks]);
+  }, [todos]);
   
-  const loadTasks = useCallback(() => {
-    dispatch(fetchTasks());
+  const loadTodos = useCallback(() => {
+    dispatch(fetchTodos());
   }, [dispatch]);
   
-  return { tasks: sortedTasks, loading, loadTasks };
+  return { todos: sortedTodos, loading, loadTodos };
 }
 
 // Component uses ViewModel
-export function TaskList() {
-  const viewModel = useTaskListViewModel();
+export function TodoList() {
+  const viewModel = useTodoListViewModel();
   
-  return <div>{/* Render viewModel.tasks */}</div>;
+  return <div>{/* Render viewModel.todos */}</div>;
 }
 ```
 
@@ -1681,7 +1665,7 @@ export function TaskList() {
 
 ```typescript
 // ViewModel contains DOM manipulation
-export function useTaskFormViewModel() {
+export function useTodoFormViewModel() {
   const submitForm = () => {
     document.getElementById('submit-btn').classList.add('loading');
     // Submit logic
@@ -1697,7 +1681,7 @@ Return state, let View handle DOM:
 
 ```typescript
 // ViewModel returns state
-export function useTaskFormViewModel() {
+export function useTodoFormViewModel() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   const submitForm = async () => {
@@ -1710,8 +1694,8 @@ export function useTaskFormViewModel() {
 }
 
 // View uses state for DOM updates
-export function TaskForm() {
-  const { isSubmitting, submitForm } = useTaskFormViewModel();
+export function TodoForm() {
+  const { isSubmitting, submitForm } = useTodoFormViewModel();
   
   return (
     <button 
@@ -1728,7 +1712,7 @@ export function TaskForm() {
 
 ## Summary
 
-Effective directory structure for large full-stack applications requires:
+Effective directory structure for full-stack applications requires:
 
 1. **Feature-based organization** for business logic
 2. **MVVM architecture** in the frontend with clear separation of concerns:
@@ -1741,16 +1725,15 @@ Effective directory structure for large full-stack applications requires:
 6. **Consistent naming** and structural conventions
 7. **Comprehensive testing** at all levels (including ViewModel layer)
 8. **Environment-specific** configuration management
-9. **Modern tooling:** Gradle for backend builds, Yarn for frontend package management
+9. **Modern tooling:** Gradle with Kotlin DSL for backend builds, Yarn for frontend package management, Vite for bundling
 
-The structure should make code discoverable, maintainable, and enable teams to work independently on different features without frequent conflicts. As applications grow, regularly evaluate whether the current structure still serves the team's needs and refactor when necessary.
+This structure makes code discoverable, maintainable, and enables teams to work independently on different features without frequent conflicts. As applications grow, teams should regularly evaluate whether the current structure still serves their needs and refactor when necessary.
 
 Key decision points:
-- Monorepo vs multi-repo based on team structure and deployment needs
-- Package by feature vs package by layer (prefer feature for large apps)
-- MVVM implementation strategy (custom hooks as ViewModels)
-- When to extract shared components to separate packages
-- How deeply to nest components and modules
-- Where to draw boundaries between features
+- A monorepo simplifies coordination between frontend and backend
+- Packaging by feature rather than by layer improves cohesion
+- MVVM implementation uses custom hooks as ViewModels
+- Shared components should be extracted to separate packages when they reach critical mass
+- Nesting should be kept shallow and boundaries clear between features
 
 The goal is not perfect structure from day one, but rather a structure that evolves with the application while maintaining clarity and organization. The MVVM pattern provides clear guidelines for where different types of logic belong, reducing ambiguity and improving testability.
