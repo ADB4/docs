@@ -22,7 +22,7 @@
 
 Layered architecture organizes backend applications into distinct horizontal layers, each with specific responsibilities. This pattern promotes separation of concerns, making applications more maintainable, testable, and scalable.
 
-The standard Spring Boot application employs six primary layers:
+A standard Spring Boot application employs six primary layers:
 1. Controller Layer (Presentation)
 2. DTO Layer (Data Transfer)
 3. Service Layer (Business Logic)
@@ -120,7 +120,7 @@ Entities represent domain objects and map directly to database tables. They defi
 ### Example
 
 ```java
-package com.example.tasks.entity;
+package com.example.todos.entity;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -129,18 +129,18 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "tasks")
+@Table(name = "todos")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class TaskEntity {
+public class TodoEntity {
     
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     
     @Column(nullable = false, length = 500)
-    private String title;
+    private String text;
     
     @Column(columnDefinition = "TEXT")
     private String description;
@@ -150,7 +150,7 @@ public class TaskEntity {
     
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private TaskPriority priority;
+    private TodoPriority priority;
     
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -180,23 +180,22 @@ public class TaskEntity {
 ```
 
 ```java
-package com.example.tasks.entity;
+package com.example.todos.entity;
 
-public enum TaskPriority {
+public enum TodoPriority {
     LOW,
     MEDIUM,
-    HIGH,
-    URGENT
+    HIGH
 }
 ```
 
 ### Key Considerations
 
 **Lazy Loading:**
-Use `FetchType.LAZY` for relationships to avoid N+1 query problems. Eager loading should be explicit in repository queries when needed.
+`FetchType.LAZY` should be used for relationships to avoid N+1 query problems. Eager loading should be explicit in repository queries when needed.
 
 **Immutable Fields:**
-Use `updatable = false` for fields that should not change after creation (e.g., createdAt, id).
+`updatable = false` should be used for fields that should not change after creation (e.g., createdAt, id).
 
 **Naming Conventions:**
 - Entity class names typically end with "Entity" to distinguish from DTOs
@@ -236,10 +235,10 @@ The Repository layer provides an abstraction over database operations. It encaps
 ### Example
 
 ```java
-package com.example.tasks.repository;
+package com.example.todos.repository;
 
-import com.example.tasks.entity.TaskEntity;
-import com.example.tasks.entity.TaskPriority;
+import com.example.todos.entity.TodoEntity;
+import com.example.todos.entity.TodoPriority;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -250,41 +249,41 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface TaskRepository extends JpaRepository<TaskEntity, Long> {
+public interface TodoRepository extends JpaRepository<TodoEntity, Long> {
     
     // Spring Data JPA derived queries
-    List<TaskEntity> findByUserId(Long userId);
+    List<TodoEntity> findByUserId(Long userId);
     
-    List<TaskEntity> findByUserIdAndCompleted(Long userId, Boolean completed);
+    List<TodoEntity> findByUserIdAndCompleted(Long userId, Boolean completed);
     
-    List<TaskEntity> findByUserIdAndPriority(Long userId, TaskPriority priority);
+    List<TodoEntity> findByUserIdAndPriority(Long userId, TodoPriority priority);
     
-    Optional<TaskEntity> findByIdAndUserId(Long id, Long userId);
+    Optional<TodoEntity> findByIdAndUserId(Long id, Long userId);
     
     Long countByUserIdAndCompleted(Long userId, Boolean completed);
     
     // Custom JPQL queries
-    @Query("SELECT t FROM TaskEntity t WHERE t.user.id = :userId AND t.completed = false " +
-           "ORDER BY CASE t.priority WHEN 'URGENT' THEN 1 WHEN 'HIGH' THEN 2 " +
-           "WHEN 'MEDIUM' THEN 3 WHEN 'LOW' THEN 4 END, t.createdAt ASC")
-    List<TaskEntity> findActiveTasksByPriority(@Param("userId") Long userId);
+    @Query("SELECT t FROM TodoEntity t WHERE t.user.id = :userId AND t.completed = false " +
+           "ORDER BY CASE t.priority WHEN 'HIGH' THEN 1 WHEN 'MEDIUM' THEN 2 " +
+           "WHEN 'LOW' THEN 3 END, t.createdAt ASC")
+    List<TodoEntity> findActiveByPriority(@Param("userId") Long userId);
     
-    @Query("SELECT t FROM TaskEntity t WHERE t.user.id = :userId " +
+    @Query("SELECT t FROM TodoEntity t WHERE t.user.id = :userId " +
            "AND t.completed = false AND t.createdAt < :date")
-    List<TaskEntity> findOverdueTasks(@Param("userId") Long userId, @Param("date") LocalDateTime date);
+    List<TodoEntity> findOverdue(@Param("userId") Long userId, @Param("date") LocalDateTime date);
     
     // Query with JOIN FETCH to avoid N+1 problem
-    @Query("SELECT t FROM TaskEntity t " +
+    @Query("SELECT t FROM TodoEntity t " +
            "LEFT JOIN FETCH t.category " +
            "WHERE t.user.id = :userId")
-    List<TaskEntity> findByUserIdWithCategory(@Param("userId") Long userId);
+    List<TodoEntity> findByUserIdWithCategory(@Param("userId") Long userId);
     
     // Native SQL query for complex operations
-    @Query(value = "SELECT * FROM tasks t WHERE t.user_id = :userId " +
-                   "AND LOWER(t.title) LIKE LOWER(CONCAT('%', :searchTerm, '%'))",
+    @Query(value = "SELECT * FROM todos t WHERE t.user_id = :userId " +
+                   "AND LOWER(t.text) LIKE LOWER(CONCAT('%', :searchTerm, '%'))",
            nativeQuery = true)
-    List<TaskEntity> searchTasksByTitle(@Param("userId") Long userId, 
-                                        @Param("searchTerm") String searchTerm);
+    List<TodoEntity> searchByText(@Param("userId") Long userId, 
+                                  @Param("searchTerm") String searchTerm);
     
     // Bulk operations
     void deleteByUserIdAndCompleted(Long userId, Boolean completed);
@@ -294,13 +293,13 @@ public interface TaskRepository extends JpaRepository<TaskEntity, Long> {
 ### Key Considerations
 
 **Query Method Naming:**
-Spring Data JPA derives queries from method names. Follow the naming convention: `findBy`, `countBy`, `deleteBy` followed by field names and conditions.
+Spring Data JPA derives queries from method names. The naming convention follows: `findBy`, `countBy`, `deleteBy` followed by field names and conditions.
 
 **Custom Queries:**
-Use `@Query` for complex queries that cannot be expressed through method names. Prefer JPQL over native SQL for database portability.
+`@Query` should be used for complex queries that cannot be expressed through method names. JPQL is preferred over native SQL for database portability.
 
 **JOIN FETCH:**
-Use `JOIN FETCH` in JPQL queries to eagerly load relationships and avoid N+1 query problems.
+We use `JOIN FETCH` in JPQL queries to eagerly load relationships and avoid N+1 query problems.
 
 **Avoid:**
 - Business logic in repository methods
@@ -337,82 +336,82 @@ Data Transfer Objects (DTOs) define the API contract between client and server. 
 ### Example
 
 ```java
-package com.example.tasks.dto;
+package com.example.todos.dto;
 
-import com.example.tasks.entity.TaskPriority;
+import com.example.todos.entity.TodoPriority;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.*;
 
 import java.time.LocalDateTime;
 
-// Request DTO - for creating tasks
-@Schema(description = "Request object for creating a new task")
-public record CreateTaskRequest(
+// Request DTO - for creating todos
+@Schema(description = "Request object for creating a new todo")
+public record CreateTodoRequest(
     
-    @NotBlank(message = "Title is required")
-    @Size(min = 1, max = 500, message = "Title must be between 1 and 500 characters")
-    @Schema(description = "Task title", example = "Complete project documentation")
-    String title,
+    @NotBlank(message = "Text is required")
+    @Size(min = 1, max = 500, message = "Text must be between 1 and 500 characters")
+    @Schema(description = "Todo text", example = "Complete project documentation")
+    String text,
     
     @Size(max = 5000, message = "Description cannot exceed 5000 characters")
-    @Schema(description = "Task description", example = "Write comprehensive documentation for the API")
+    @Schema(description = "Todo description", example = "Write comprehensive documentation for the API")
     String description,
     
     @NotNull(message = "Priority is required")
-    @Schema(description = "Task priority level", example = "HIGH")
-    TaskPriority priority,
+    @Schema(description = "Todo priority level", example = "HIGH")
+    TodoPriority priority,
     
-    @Schema(description = "Category ID for the task", example = "1")
+    @Schema(description = "Category ID for the todo", example = "1")
     Long categoryId
 ) {}
 
-// Request DTO - for updating tasks
-@Schema(description = "Request object for updating an existing task")
-public record UpdateTaskRequest(
+// Request DTO - for updating todos
+@Schema(description = "Request object for updating an existing todo")
+public record UpdateTodoRequest(
     
-    @Size(min = 1, max = 500, message = "Title must be between 1 and 500 characters")
-    @Schema(description = "Task title", example = "Complete project documentation")
-    String title,
+    @Size(min = 1, max = 500, message = "Text must be between 1 and 500 characters")
+    @Schema(description = "Todo text", example = "Complete project documentation")
+    String text,
     
     @Size(max = 5000, message = "Description cannot exceed 5000 characters")
-    @Schema(description = "Task description")
+    @Schema(description = "Todo description")
     String description,
     
-    @Schema(description = "Task completion status")
+    @Schema(description = "Todo completion status")
     Boolean completed,
     
-    @Schema(description = "Task priority level")
-    TaskPriority priority,
+    @Schema(description = "Todo priority level")
+    TodoPriority priority,
     
-    @Schema(description = "Category ID for the task")
+    @Schema(description = "Category ID for the todo")
     Long categoryId
 ) {}
 
-// Response DTO - for returning task data
-@Schema(description = "Task response object")
-public record TaskResponse(
+// Response DTO - for returning todo data
+@Schema(description = "Todo response object")
+public record TodoResponse(
     
-    @Schema(description = "Task ID", example = "1")
+    @Schema(description = "Todo ID", example = "1")
     Long id,
     
-    @Schema(description = "Task title", example = "Complete project documentation")
-    String title,
+    @Schema(description = "Todo text", example = "Complete project documentation")
+    String text,
     
-    @Schema(description = "Task description")
+    @Schema(description = "Todo description")
     String description,
     
-    @Schema(description = "Task completion status", example = "false")
+    @Schema(description = "Todo completion status", example = "false")
     Boolean completed,
     
-    @Schema(description = "Task priority level", example = "HIGH")
-    TaskPriority priority,
+    @Schema(description = "Todo priority level", example = "HIGH")
+    TodoPriority priority,
     
-    @Schema(description = "Task creation timestamp")
+    @Schema(description = "Todo creation timestamp")
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     LocalDateTime createdAt,
     
-    @Schema(description = "Task last update timestamp")
+    @Schema(description = "Todo last update timestamp")
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     LocalDateTime updatedAt,
     
@@ -423,20 +422,20 @@ public record TaskResponse(
 }
 
 // Summary DTO - for list responses
-@Schema(description = "Task summary for list views")
-public record TaskSummary(
+@Schema(description = "Todo summary for list views")
+public record TodoSummary(
     
-    @Schema(description = "Task ID")
+    @Schema(description = "Todo ID")
     Long id,
     
-    @Schema(description = "Task title")
-    String title,
+    @Schema(description = "Todo text")
+    String text,
     
-    @Schema(description = "Task completion status")
+    @Schema(description = "Todo completion status")
     Boolean completed,
     
-    @Schema(description = "Task priority level")
-    TaskPriority priority,
+    @Schema(description = "Todo priority level")
+    TodoPriority priority,
     
     @Schema(description = "Category name")
     String categoryName
@@ -449,13 +448,13 @@ public record TaskSummary(
 Java records (introduced in Java 14, standard in Java 16+) are ideal for DTOs. They provide immutability, concise syntax, and automatic implementation of equals(), hashCode(), and toString(). Records work seamlessly with validation annotations and JSON serialization.
 
 **Separation of Request and Response:**
-Use separate records for requests and responses. Request DTOs contain validation; response DTOs control what data is exposed.
+We use separate records for requests and responses. Request DTOs contain validation; response DTOs control what data is exposed.
 
 **Validation Annotations:**
-Apply validation at the DTO level using Jakarta Validation annotations. This ensures invalid data never reaches the service layer. Annotations work directly on record components.
+We apply validation at the DTO level using Jakarta Validation annotations. This ensures invalid data never reaches the service layer. Annotations work directly on record components.
 
 **Nested Records:**
-Use nested records for related entities rather than exposing full entity graphs. This prevents over-fetching and circular reference issues.
+We use nested records for related entities rather than exposing full entity graphs. This prevents over-fetching and circular reference issues.
 
 **Immutability:**
 Records are immutable by default, which prevents accidental modification and makes DTOs safer for concurrent operations.
@@ -494,28 +493,27 @@ Mappers transform data between DTOs and Entities. They provide a clean separatio
 ### Example
 
 ```java
-package com.example.tasks.mapper;
+package com.example.todos.mapper;
 
-import com.example.tasks.dto.*;
-import com.example.tasks.entity.CategoryEntity;
-import com.example.tasks.entity.TaskEntity;
-import com.example.tasks.entity.UserEntity;
+import com.example.todos.dto.*;
+import com.example.todos.entity.CategoryEntity;
+import com.example.todos.entity.TodoEntity;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Component
-public class TaskMapper {
+public class TodoMapper {
     
     /**
-     * Convert CreateTaskRequest to TaskEntity
+     * Convert CreateTodoRequest to TodoEntity
      * Does not set: id, createdAt, updatedAt (handled by entity)
      * Requires: user to be set by service layer
      */
-    public TaskEntity toEntity(CreateTaskRequest request) {
-        TaskEntity entity = new TaskEntity();
-        entity.setTitle(request.title());
+    public TodoEntity toEntity(CreateTodoRequest request) {
+        TodoEntity entity = new TodoEntity();
+        entity.setText(request.text());
         entity.setDescription(request.description());
         entity.setPriority(request.priority());
         entity.setCompleted(false); // Default value
@@ -524,12 +522,12 @@ public class TaskMapper {
     }
     
     /**
-     * Update existing TaskEntity with UpdateTaskRequest
+     * Update existing TodoEntity with UpdateTodoRequest
      * Only updates non-null fields from request
      */
-    public void updateEntity(TaskEntity entity, UpdateTaskRequest request) {
-        if (request.title() != null) {
-            entity.setTitle(request.title());
+    public void updateEntity(TodoEntity entity, UpdateTodoRequest request) {
+        if (request.text() != null) {
+            entity.setText(request.text());
         }
         if (request.description() != null) {
             entity.setDescription(request.description());
@@ -544,24 +542,24 @@ public class TaskMapper {
     }
     
     /**
-     * Convert TaskEntity to TaskResponse
+     * Convert TodoEntity to TodoResponse
      * Includes nested category information if present
      */
-    public TaskResponse toResponse(TaskEntity entity) {
-        TaskResponse.CategorySummary categoryInfo = null;
+    public TodoResponse toResponse(TodoEntity entity) {
+        TodoResponse.CategorySummary categoryInfo = null;
         
         // Map nested category
         if (entity.getCategory() != null) {
             CategoryEntity category = entity.getCategory();
-            categoryInfo = new TaskResponse.CategorySummary(
+            categoryInfo = new TodoResponse.CategorySummary(
                 category.getId(),
                 category.getName()
             );
         }
         
-        return new TaskResponse(
+        return new TodoResponse(
             entity.getId(),
-            entity.getTitle(),
+            entity.getText(),
             entity.getDescription(),
             entity.getCompleted(),
             entity.getPriority(),
@@ -572,13 +570,13 @@ public class TaskMapper {
     }
     
     /**
-     * Convert TaskEntity to TaskSummary
+     * Convert TodoEntity to TodoSummary
      * Lighter version for list responses
      */
-    public TaskSummary toSummary(TaskEntity entity) {
-        return new TaskSummary(
+    public TodoSummary toSummary(TodoEntity entity) {
+        return new TodoSummary(
             entity.getId(),
-            entity.getTitle(),
+            entity.getText(),
             entity.getCompleted(),
             entity.getPriority(),
             entity.getCategory() != null ? entity.getCategory().getName() : null
@@ -586,18 +584,18 @@ public class TaskMapper {
     }
     
     /**
-     * Convert list of TaskEntity to list of TaskResponse
+     * Convert list of TodoEntity to list of TodoResponse
      */
-    public List<TaskResponse> toResponseList(List<TaskEntity> entities) {
+    public List<TodoResponse> toResponseList(List<TodoEntity> entities) {
         return entities.stream()
             .map(this::toResponse)
             .collect(Collectors.toList());
     }
     
     /**
-     * Convert list of TaskEntity to list of TaskSummary
+     * Convert list of TodoEntity to list of TodoSummary
      */
-    public List<TaskSummary> toSummaryList(List<TaskEntity> entities) {
+    public List<TodoSummary> toSummaryList(List<TodoEntity> entities) {
         return entities.stream()
             .map(this::toSummary)
             .collect(Collectors.toList());
@@ -608,16 +606,16 @@ public class TaskMapper {
 ### Alternative: Using MapStruct
 
 ```java
-package com.example.tasks.mapper;
+package com.example.todos.mapper;
 
-import com.example.tasks.dto.*;
-import com.example.tasks.entity.TaskEntity;
+import com.example.todos.dto.*;
+import com.example.todos.entity.TodoEntity;
 import org.mapstruct.*;
 
 import java.util.List;
 
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
-public interface TaskMapperMapStruct {
+public interface TodoMapperMapStruct {
     
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
@@ -625,7 +623,7 @@ public interface TaskMapperMapStruct {
     @Mapping(target = "user", ignore = true)
     @Mapping(target = "category", ignore = true)
     @Mapping(target = "completed", constant = "false")
-    TaskEntity toEntity(CreateTaskRequest request);
+    TodoEntity toEntity(CreateTodoRequest request);
     
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
@@ -633,17 +631,17 @@ public interface TaskMapperMapStruct {
     @Mapping(target = "user", ignore = true)
     @Mapping(target = "category", ignore = true)
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
-    void updateEntity(@MappingTarget TaskEntity entity, UpdateTaskRequest request);
+    void updateEntity(@MappingTarget TodoEntity entity, UpdateTodoRequest request);
     
     @Mapping(target = "category", source = "category")
-    TaskResponse toResponse(TaskEntity entity);
+    TodoResponse toResponse(TodoEntity entity);
     
     @Mapping(target = "categoryName", source = "category.name")
-    TaskSummary toSummary(TaskEntity entity);
+    TodoSummary toSummary(TodoEntity entity);
     
-    List<TaskResponse> toResponseList(List<TaskEntity> entities);
+    List<TodoResponse> toResponseList(List<TodoEntity> entities);
     
-    List<TaskSummary> toSummaryList(List<TaskEntity> entities);
+    List<TodoSummary> toSummaryList(List<TodoEntity> entities);
 }
 ```
 
@@ -653,13 +651,13 @@ public interface TaskMapperMapStruct {
 Mappers must handle null values appropriately. For updates, null typically means "don't change this field."
 
 **Record Accessors:**
-Records use accessor methods without the "get" prefix. Use `request.title()` instead of `request.getTitle()`. Entity getters still use the traditional "get" prefix.
+Records use accessor methods without the "get" prefix: `request.text()` instead of `request.getText()`. Entity getters still use the traditional "get" prefix.
 
 **Defensive Copying:**
-When mapping collections, create new lists rather than exposing internal collections.
+When mapping collections, new lists should be created rather than exposing internal collections.
 
 **Lazy Loading:**
-Be cautious when mapping entities with lazy-loaded relationships. Access to lazy collections outside a transaction will cause LazyInitializationException.
+Caution is required when mapping entities with lazy-loaded relationships. Access to lazy collections outside a transaction will cause LazyInitializationException.
 
 **Avoid:**
 - Business logic in mapping methods
@@ -696,17 +694,18 @@ The Service layer contains business logic and orchestrates operations across mul
 ### Example
 
 ```java
-package com.example.tasks.service;
+package com.example.todos.service;
 
-import com.example.tasks.dto.*;
-import com.example.tasks.entity.CategoryEntity;
-import com.example.tasks.entity.TaskEntity;
-import com.example.tasks.entity.UserEntity;
-import com.example.tasks.exception.*;
-import com.example.tasks.mapper.TaskMapper;
-import com.example.tasks.repository.CategoryRepository;
-import com.example.tasks.repository.TaskRepository;
-import com.example.tasks.repository.UserRepository;
+import com.example.todos.dto.*;
+import com.example.todos.entity.CategoryEntity;
+import com.example.todos.entity.TodoEntity;
+import com.example.todos.entity.TodoPriority;
+import com.example.todos.entity.UserEntity;
+import com.example.todos.exception.*;
+import com.example.todos.mapper.TodoMapper;
+import com.example.todos.repository.CategoryRepository;
+import com.example.todos.repository.TodoRepository;
+import com.example.todos.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -718,67 +717,67 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class TaskService {
+public class TodoService {
     
-    private final TaskRepository taskRepository;
+    private final TodoRepository todoRepository;
     private final UserRepository userRepository;
     private final CategoryRepository categoryRepository;
-    private final TaskMapper taskMapper;
+    private final TodoMapper todoMapper;
     
     /**
-     * Retrieve all tasks for a user
+     * Retrieve all todos for a user
      * Read-only operation, no transaction needed
      */
     @Transactional(readOnly = true)
-    public List<TaskSummary> getUserTasks(Long userId) {
-        log.debug("Fetching tasks for user: {}", userId);
+    public List<TodoSummary> getUserTodos(Long userId) {
+        log.debug("Fetching todos for user: {}", userId);
         
         // Verify user exists
         verifyUserExists(userId);
         
-        List<TaskEntity> tasks = taskRepository.findByUserIdWithCategory(userId);
-        return taskMapper.toSummaryList(tasks);
+        List<TodoEntity> todos = todoRepository.findByUserIdWithCategory(userId);
+        return todoMapper.toSummaryList(todos);
     }
     
     /**
-     * Retrieve active tasks sorted by priority
+     * Retrieve active todos sorted by priority
      */
     @Transactional(readOnly = true)
-    public List<TaskResponse> getActiveTasksByPriority(Long userId) {
-        log.debug("Fetching active tasks by priority for user: {}", userId);
+    public List<TodoResponse> getActiveByPriority(Long userId) {
+        log.debug("Fetching active todos by priority for user: {}", userId);
         
         verifyUserExists(userId);
         
-        List<TaskEntity> tasks = taskRepository.findActiveTasksByPriority(userId);
-        return taskMapper.toResponseList(tasks);
+        List<TodoEntity> todos = todoRepository.findActiveByPriority(userId);
+        return todoMapper.toResponseList(todos);
     }
     
     /**
-     * Get a single task by ID
+     * Get a single todo by ID
      */
     @Transactional(readOnly = true)
-    public TaskResponse getTask(Long userId, Long taskId) {
-        log.debug("Fetching task {} for user {}", taskId, userId);
+    public TodoResponse getTodo(Long userId, Long todoId) {
+        log.debug("Fetching todo {} for user {}", todoId, userId);
         
-        TaskEntity task = findTaskByIdAndUser(taskId, userId);
-        return taskMapper.toResponse(task);
+        TodoEntity todo = findByIdAndUser(todoId, userId);
+        return todoMapper.toResponse(todo);
     }
     
     /**
-     * Create a new task
+     * Create a new todo
      * Transactional - will rollback if any operation fails
      */
     @Transactional
-    public TaskResponse createTask(Long userId, CreateTaskRequest request) {
-        log.info("Creating task for user {}: {}", userId, request.title());
+    public TodoResponse createTodo(Long userId, CreateTodoRequest request) {
+        log.info("Creating todo for user {}: {}", userId, request.text());
         
         // Verify user exists and get entity
         UserEntity user = userRepository.findById(userId)
             .orElseThrow(() -> new ResourceNotFoundException("User not found: " + userId));
         
         // Map DTO to entity
-        TaskEntity task = taskMapper.toEntity(request);
-        task.setUser(user);
+        TodoEntity todo = todoMapper.toEntity(request);
+        todo.setUser(user);
         
         // Set category if provided
         if (request.categoryId() != null) {
@@ -787,122 +786,122 @@ public class TaskService {
             ).orElseThrow(() -> new ResourceNotFoundException(
                 "Category not found: " + request.categoryId()
             ));
-            task.setCategory(category);
+            todo.setCategory(category);
         }
         
-        // Business rule: Check user's task limit
-        long userTaskCount = taskRepository.countByUserIdAndCompleted(userId, false);
-        if (userTaskCount >= 100) {
+        // Business rule: Check user's todo limit
+        long userTodoCount = todoRepository.countByUserIdAndCompleted(userId, false);
+        if (userTodoCount >= 100) {
             throw new BusinessRuleException(
-                "Cannot create task: user has reached maximum of 100 active tasks"
+                "Cannot create todo: user has reached maximum of 100 active todos"
             );
         }
         
         // Save and return
-        TaskEntity savedTask = taskRepository.save(task);
-        log.info("Created task with ID: {}", savedTask.getId());
+        TodoEntity savedTodo = todoRepository.save(todo);
+        log.info("Created todo with ID: {}", savedTodo.getId());
         
-        return taskMapper.toResponse(savedTask);
+        return todoMapper.toResponse(savedTodo);
     }
     
     /**
-     * Update an existing task
+     * Update an existing todo
      */
     @Transactional
-    public TaskResponse updateTask(Long userId, Long taskId, UpdateTaskRequest request) {
-        log.info("Updating task {} for user {}", taskId, userId);
+    public TodoResponse updateTodo(Long userId, Long todoId, UpdateTodoRequest request) {
+        log.info("Updating todo {} for user {}", todoId, userId);
         
-        // Find existing task
-        TaskEntity task = findTaskByIdAndUser(taskId, userId);
+        // Find existing todo
+        TodoEntity todo = findByIdAndUser(todoId, userId);
         
         // Update fields
-        taskMapper.updateEntity(task, request);
+        todoMapper.updateEntity(todo, request);
         
         // Update category if provided
         if (request.categoryId() != null) {
             if (request.categoryId() == 0) {
                 // Special case: 0 means remove category
-                task.setCategory(null);
+                todo.setCategory(null);
             } else {
                 CategoryEntity category = categoryRepository.findByIdAndUserId(
                     request.categoryId(), userId
                 ).orElseThrow(() -> new ResourceNotFoundException(
                     "Category not found: " + request.categoryId()
                 ));
-                task.setCategory(category);
+                todo.setCategory(category);
             }
         }
         
-        // Business rule: Cannot reopen urgent completed tasks after 30 days
-        if (Boolean.FALSE.equals(request.completed()) && task.getCompleted()) {
-            if (task.getPriority() == TaskPriority.URGENT) {
+        // Business rule: Cannot reopen high-priority completed todos after 30 days
+        if (Boolean.FALSE.equals(request.completed()) && todo.getCompleted()) {
+            if (todo.getPriority() == TodoPriority.HIGH) {
                 LocalDateTime thirtyDaysAgo = LocalDateTime.now().minusDays(30);
-                if (task.getUpdatedAt().isBefore(thirtyDaysAgo)) {
+                if (todo.getUpdatedAt().isBefore(thirtyDaysAgo)) {
                     throw new BusinessRuleException(
-                        "Cannot reopen urgent task that was completed more than 30 days ago"
+                        "Cannot reopen high-priority todo that was completed more than 30 days ago"
                     );
                 }
             }
         }
         
-        TaskEntity savedTask = taskRepository.save(task);
-        return taskMapper.toResponse(savedTask);
+        TodoEntity savedTodo = todoRepository.save(todo);
+        return todoMapper.toResponse(savedTodo);
     }
     
     /**
-     * Delete a task
+     * Delete a todo
      */
     @Transactional
-    public void deleteTask(Long userId, Long taskId) {
-        log.info("Deleting task {} for user {}", taskId, userId);
+    public void deleteTodo(Long userId, Long todoId) {
+        log.info("Deleting todo {} for user {}", todoId, userId);
         
-        TaskEntity task = findTaskByIdAndUser(taskId, userId);
+        TodoEntity todo = findByIdAndUser(todoId, userId);
         
-        // Business rule: Cannot delete urgent tasks
-        if (task.getPriority() == TaskPriority.URGENT && !task.getCompleted()) {
-            throw new BusinessRuleException("Cannot delete active urgent tasks");
+        // Business rule: Cannot delete high-priority active todos
+        if (todo.getPriority() == TodoPriority.HIGH && !todo.getCompleted()) {
+            throw new BusinessRuleException("Cannot delete active high-priority todos");
         }
         
-        taskRepository.delete(task);
-        log.info("Deleted task {}", taskId);
+        todoRepository.delete(todo);
+        log.info("Deleted todo {}", todoId);
     }
     
     /**
-     * Bulk delete all completed tasks
+     * Bulk delete all completed todos
      */
     @Transactional
-    public int deleteCompletedTasks(Long userId) {
-        log.info("Deleting all completed tasks for user {}", userId);
+    public int deleteCompleted(Long userId) {
+        log.info("Deleting all completed todos for user {}", userId);
         
         verifyUserExists(userId);
         
-        List<TaskEntity> completedTasks = taskRepository.findByUserIdAndCompleted(userId, true);
-        int count = completedTasks.size();
+        List<TodoEntity> completedTodos = todoRepository.findByUserIdAndCompleted(userId, true);
+        int count = completedTodos.size();
         
-        taskRepository.deleteByUserIdAndCompleted(userId, true);
+        todoRepository.deleteByUserIdAndCompleted(userId, true);
         
-        log.info("Deleted {} completed tasks", count);
+        log.info("Deleted {} completed todos", count);
         return count;
     }
     
     /**
-     * Get task statistics for a user
+     * Get todo statistics for a user
      */
     @Transactional(readOnly = true)
-    public TaskStatistics getTaskStatistics(Long userId) {
-        log.debug("Calculating task statistics for user {}", userId);
+    public TodoStatistics getStatistics(Long userId) {
+        log.debug("Calculating todo statistics for user {}", userId);
         
         verifyUserExists(userId);
         
-        List<TaskEntity> allTasks = taskRepository.findByUserId(userId);
-        long totalTasks = allTasks.size();
-        long completedTasks = allTasks.stream().filter(TaskEntity::getCompleted).count();
-        long activeTasks = totalTasks - completedTasks;
+        List<TodoEntity> allTodos = todoRepository.findByUserId(userId);
+        long totalTodos = allTodos.size();
+        long completedTodos = allTodos.stream().filter(TodoEntity::getCompleted).count();
+        long activeTodos = totalTodos - completedTodos;
         
         LocalDateTime weekAgo = LocalDateTime.now().minusDays(7);
-        List<TaskEntity> overdueTasks = taskRepository.findOverdueTasks(userId, weekAgo);
+        List<TodoEntity> overdueTodos = todoRepository.findOverdue(userId, weekAgo);
         
-        return new TaskStatistics(totalTasks, activeTasks, completedTasks, overdueTasks.size());
+        return new TodoStatistics(totalTodos, activeTodos, completedTodos, overdueTodos.size());
     }
     
     // Private helper methods
@@ -913,36 +912,36 @@ public class TaskService {
         }
     }
     
-    private TaskEntity findTaskByIdAndUser(Long taskId, Long userId) {
-        return taskRepository.findByIdAndUserId(taskId, userId)
+    private TodoEntity findByIdAndUser(Long todoId, Long userId) {
+        return todoRepository.findByIdAndUserId(todoId, userId)
             .orElseThrow(() -> new ResourceNotFoundException(
-                "Task not found: " + taskId + " for user: " + userId
+                "Todo not found: " + todoId + " for user: " + userId
             ));
     }
 }
 ```
 
 ```java
-package com.example.tasks.dto;
+package com.example.todos.dto;
 
-public record TaskStatistics(
-    Long totalTasks,
-    Long activeTasks,
-    Long completedTasks,
-    Long overdueTasks
+public record TodoStatistics(
+    Long totalTodos,
+    Long activeTodos,
+    Long completedTodos,
+    Long overdueTodos
 ) {}
 ```
 
 ### Key Considerations
 
 **Transaction Management:**
-Use `@Transactional` for operations that modify data. Use `@Transactional(readOnly = true)` for read operations to optimize performance.
+`@Transactional` should be used for operations that modify data. `@Transactional(readOnly = true)` should be used for read operations to optimize performance.
 
 **Business Rules:**
 All business logic belongs in the service layer. This includes validation beyond simple format checks, complex calculations, and workflow enforcement.
 
 **Error Handling:**
-Services should throw domain-specific exceptions that controllers can translate into appropriate HTTP responses.
+Services throw domain-specific exceptions that controllers can translate into appropriate HTTP responses.
 
 **Avoid:**
 - HTTP-specific code (status codes, headers)
@@ -979,10 +978,10 @@ Controllers handle HTTP requests and responses. They serve as the entry point to
 ### Example
 
 ```java
-package com.example.tasks.controller;
+package com.example.todos.controller;
 
-import com.example.tasks.dto.*;
-import com.example.tasks.service.TaskService;
+import com.example.todos.dto.*;
+import com.example.todos.service.TodoService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -997,122 +996,122 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/users/{userId}/tasks")
+@RequestMapping("/api/users/{userId}/todos")
 @RequiredArgsConstructor
 @Slf4j
-@Tag(name = "Tasks", description = "Task management endpoints")
-public class TaskController {
+@Tag(name = "Todos", description = "Todo management endpoints")
+public class TodoController {
     
-    private final TaskService taskService;
+    private final TodoService todoService;
     
     @GetMapping
-    @Operation(summary = "Get all tasks for a user", description = "Retrieves all tasks for the specified user")
-    @ApiResponse(responseCode = "200", description = "Tasks retrieved successfully")
+    @Operation(summary = "Get all todos for a user", description = "Retrieves all todos for the specified user")
+    @ApiResponse(responseCode = "200", description = "Todos retrieved successfully")
     @ApiResponse(responseCode = "404", description = "User not found")
-    public ResponseEntity<List<TaskSummary>> getUserTasks(
+    public ResponseEntity<List<TodoSummary>> getUserTodos(
             @Parameter(description = "User ID") @PathVariable Long userId) {
         
-        log.info("GET /api/users/{}/tasks", userId);
-        List<TaskSummary> tasks = taskService.getUserTasks(userId);
-        return ResponseEntity.ok(tasks);
+        log.info("GET /api/users/{}/todos", userId);
+        List<TodoSummary> todos = todoService.getUserTodos(userId);
+        return ResponseEntity.ok(todos);
     }
     
     @GetMapping("/active")
-    @Operation(summary = "Get active tasks by priority", 
-               description = "Retrieves active tasks sorted by priority level")
-    @ApiResponse(responseCode = "200", description = "Tasks retrieved successfully")
-    public ResponseEntity<List<TaskResponse>> getActiveTasksByPriority(
+    @Operation(summary = "Get active todos by priority", 
+               description = "Retrieves active todos sorted by priority level")
+    @ApiResponse(responseCode = "200", description = "Todos retrieved successfully")
+    public ResponseEntity<List<TodoResponse>> getActiveByPriority(
             @PathVariable Long userId) {
         
-        log.info("GET /api/users/{}/tasks/active", userId);
-        List<TaskResponse> tasks = taskService.getActiveTasksByPriority(userId);
-        return ResponseEntity.ok(tasks);
+        log.info("GET /api/users/{}/todos/active", userId);
+        List<TodoResponse> todos = todoService.getActiveByPriority(userId);
+        return ResponseEntity.ok(todos);
     }
     
-    @GetMapping("/{taskId}")
-    @Operation(summary = "Get task by ID", description = "Retrieves a specific task by ID")
-    @ApiResponse(responseCode = "200", description = "Task retrieved successfully")
-    @ApiResponse(responseCode = "404", description = "Task not found")
-    public ResponseEntity<TaskResponse> getTask(
+    @GetMapping("/{todoId}")
+    @Operation(summary = "Get todo by ID", description = "Retrieves a specific todo by ID")
+    @ApiResponse(responseCode = "200", description = "Todo retrieved successfully")
+    @ApiResponse(responseCode = "404", description = "Todo not found")
+    public ResponseEntity<TodoResponse> getTodo(
             @PathVariable Long userId,
-            @Parameter(description = "Task ID") @PathVariable Long taskId) {
+            @Parameter(description = "Todo ID") @PathVariable Long todoId) {
         
-        log.info("GET /api/users/{}/tasks/{}", userId, taskId);
-        TaskResponse task = taskService.getTask(userId, taskId);
-        return ResponseEntity.ok(task);
+        log.info("GET /api/users/{}/todos/{}", userId, todoId);
+        TodoResponse todo = todoService.getTodo(userId, todoId);
+        return ResponseEntity.ok(todo);
     }
     
     @PostMapping
-    @Operation(summary = "Create a new task", description = "Creates a new task for the user")
-    @ApiResponse(responseCode = "201", description = "Task created successfully")
+    @Operation(summary = "Create a new todo", description = "Creates a new todo for the user")
+    @ApiResponse(responseCode = "201", description = "Todo created successfully")
     @ApiResponse(responseCode = "400", description = "Invalid request data")
     @ApiResponse(responseCode = "404", description = "User not found")
-    public ResponseEntity<TaskResponse> createTask(
+    public ResponseEntity<TodoResponse> createTodo(
             @PathVariable Long userId,
-            @Valid @RequestBody CreateTaskRequest request) {
+            @Valid @RequestBody CreateTodoRequest request) {
         
-        log.info("POST /api/users/{}/tasks - {}", userId, request.getTitle());
-        TaskResponse task = taskService.createTask(userId, request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(task);
+        log.info("POST /api/users/{}/todos - {}", userId, request.text());
+        TodoResponse todo = todoService.createTodo(userId, request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(todo);
     }
     
-    @PutMapping("/{taskId}")
-    @Operation(summary = "Update a task", description = "Updates an existing task")
-    @ApiResponse(responseCode = "200", description = "Task updated successfully")
+    @PutMapping("/{todoId}")
+    @Operation(summary = "Update a todo", description = "Updates an existing todo")
+    @ApiResponse(responseCode = "200", description = "Todo updated successfully")
     @ApiResponse(responseCode = "400", description = "Invalid request data")
-    @ApiResponse(responseCode = "404", description = "Task not found")
-    public ResponseEntity<TaskResponse> updateTask(
+    @ApiResponse(responseCode = "404", description = "Todo not found")
+    public ResponseEntity<TodoResponse> updateTodo(
             @PathVariable Long userId,
-            @PathVariable Long taskId,
-            @Valid @RequestBody UpdateTaskRequest request) {
+            @PathVariable Long todoId,
+            @Valid @RequestBody UpdateTodoRequest request) {
         
-        log.info("PUT /api/users/{}/tasks/{}", userId, taskId);
-        TaskResponse task = taskService.updateTask(userId, taskId, request);
-        return ResponseEntity.ok(task);
+        log.info("PUT /api/users/{}/todos/{}", userId, todoId);
+        TodoResponse todo = todoService.updateTodo(userId, todoId, request);
+        return ResponseEntity.ok(todo);
     }
     
-    @DeleteMapping("/{taskId}")
-    @Operation(summary = "Delete a task", description = "Deletes a specific task")
-    @ApiResponse(responseCode = "204", description = "Task deleted successfully")
-    @ApiResponse(responseCode = "404", description = "Task not found")
-    @ApiResponse(responseCode = "422", description = "Cannot delete urgent task")
-    public ResponseEntity<Void> deleteTask(
+    @DeleteMapping("/{todoId}")
+    @Operation(summary = "Delete a todo", description = "Deletes a specific todo")
+    @ApiResponse(responseCode = "204", description = "Todo deleted successfully")
+    @ApiResponse(responseCode = "404", description = "Todo not found")
+    @ApiResponse(responseCode = "422", description = "Cannot delete high-priority todo")
+    public ResponseEntity<Void> deleteTodo(
             @PathVariable Long userId,
-            @PathVariable Long taskId) {
+            @PathVariable Long todoId) {
         
-        log.info("DELETE /api/users/{}/tasks/{}", userId, taskId);
-        taskService.deleteTask(userId, taskId);
+        log.info("DELETE /api/users/{}/todos/{}", userId, todoId);
+        todoService.deleteTodo(userId, todoId);
         return ResponseEntity.noContent().build();
     }
     
     @DeleteMapping("/completed")
-    @Operation(summary = "Delete all completed tasks", 
-               description = "Bulk deletes all completed tasks for the user")
-    @ApiResponse(responseCode = "200", description = "Completed tasks deleted successfully")
-    public ResponseEntity<DeleteCompletedResponse> deleteCompletedTasks(
+    @Operation(summary = "Delete all completed todos", 
+               description = "Bulk deletes all completed todos for the user")
+    @ApiResponse(responseCode = "200", description = "Completed todos deleted successfully")
+    public ResponseEntity<DeleteCompletedResponse> deleteCompleted(
             @PathVariable Long userId) {
         
-        log.info("DELETE /api/users/{}/tasks/completed", userId);
-        int deletedCount = taskService.deleteCompletedTasks(userId);
+        log.info("DELETE /api/users/{}/todos/completed", userId);
+        int deletedCount = todoService.deleteCompleted(userId);
         return ResponseEntity.ok(new DeleteCompletedResponse(deletedCount));
     }
     
     @GetMapping("/statistics")
-    @Operation(summary = "Get task statistics", 
-               description = "Retrieves statistics about user's tasks")
+    @Operation(summary = "Get todo statistics", 
+               description = "Retrieves statistics about user's todos")
     @ApiResponse(responseCode = "200", description = "Statistics retrieved successfully")
-    public ResponseEntity<TaskStatistics> getTaskStatistics(
+    public ResponseEntity<TodoStatistics> getStatistics(
             @PathVariable Long userId) {
         
-        log.info("GET /api/users/{}/tasks/statistics", userId);
-        TaskStatistics stats = taskService.getTaskStatistics(userId);
+        log.info("GET /api/users/{}/todos/statistics", userId);
+        TodoStatistics stats = todoService.getStatistics(userId);
         return ResponseEntity.ok(stats);
     }
 }
 ```
 
 ```java
-package com.example.tasks.dto;
+package com.example.todos.dto;
 
 public record DeleteCompletedResponse(int deletedCount) {}
 ```
@@ -1120,7 +1119,7 @@ public record DeleteCompletedResponse(int deletedCount) {}
 ### Global Exception Handler
 
 ```java
-package com.example.tasks.exception;
+package com.example.todos.exception;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -1208,10 +1207,10 @@ public class GlobalExceptionHandler {
 - 500 Internal Server Error: Unexpected errors
 
 **Request Validation:**
-Use `@Valid` to trigger validation on request DTOs. Let the framework handle validation errors.
+`@Valid` should be used to trigger validation on request DTOs. The framework handles validation errors.
 
 **Path Variables:**
-Use path variables for resource identifiers. Use query parameters for filters and pagination.
+Path variables should be used for resource identifiers. Query parameters should be used for filters and pagination.
 
 **Avoid:**
 - Business logic in controllers
@@ -1226,11 +1225,11 @@ Use path variables for resource identifiers. Use query parameters for filters an
 
 ### Complete Request Flow Example
 
-**Request:** `POST /api/users/1/tasks`
+**Request:** `POST /api/users/1/todos`
 
 ```json
 {
-  "title": "Complete documentation",
+  "text": "Complete documentation",
   "description": "Write API documentation",
   "priority": "HIGH",
   "categoryId": 5
@@ -1243,59 +1242,59 @@ Use path variables for resource identifiers. Use query parameters for filters an
 1. Controller Layer
    - Receives HTTP POST request
    - Validates JSON format and structure
-   - Triggers @Valid annotation validation on CreateTaskRequest
+   - Triggers @Valid annotation validation on CreateTodoRequest
    - Validation passes
-   - Calls: taskService.createTask(userId=1, request)
+   - Calls: todoService.createTodo(userId=1, request)
 
 2. Service Layer
-   - Receives userId and CreateTaskRequest DTO
+   - Receives userId and CreateTodoRequest DTO
    - Begins transaction (@Transactional)
    - Verifies user exists via userRepository.findById(1)
-   - Calls mapper: taskMapper.toEntity(request)
+   - Calls mapper: todoMapper.toEntity(request)
    
 3. Mapper Layer
-   - Receives CreateTaskRequest DTO
-   - Creates new TaskEntity
-   - Copies: title, description, priority using record accessors (request.title(), etc.)
+   - Receives CreateTodoRequest DTO
+   - Creates new TodoEntity
+   - Copies: text, description, priority using record accessors (request.text(), etc.)
    - Sets completed = false
-   - Returns TaskEntity (without user/category)
+   - Returns TodoEntity (without user/category)
    
 4. Service Layer (continued)
-   - Receives TaskEntity from mapper
+   - Receives TodoEntity from mapper
    - Sets user on entity via userRepository result
    - Finds category via categoryRepository.findByIdAndUserId(5, 1)
    - Sets category on entity
-   - Checks business rule: user has < 100 active tasks
+   - Checks business rule: user has < 100 active todos
    - Business rule passes
-   - Calls: taskRepository.save(entity)
+   - Calls: todoRepository.save(entity)
    
 5. Repository Layer
-   - Receives TaskEntity
+   - Receives TodoEntity
    - Generates SQL INSERT statement
    - Executes against database
-   - Returns saved TaskEntity with generated ID
+   - Returns saved TodoEntity with generated ID
    
 6. Service Layer (continued)
-   - Receives saved TaskEntity from repository
-   - Calls mapper: taskMapper.toResponse(entity)
+   - Receives saved TodoEntity from repository
+   - Calls mapper: todoMapper.toResponse(entity)
    
 7. Mapper Layer
-   - Receives TaskEntity with full data
-   - Creates TaskResponse DTO
+   - Receives TodoEntity with full data
+   - Creates TodoResponse DTO
    - Copies all fields including nested category
-   - Returns TaskResponse
+   - Returns TodoResponse
    
 8. Service Layer (continued)
-   - Returns TaskResponse to controller
+   - Returns TodoResponse to controller
    - Commits transaction
    
 9. Controller Layer
-   - Receives TaskResponse from service
+   - Receives TodoResponse from service
    - Wraps in ResponseEntity with status 201 CREATED
    - Returns to client
    
 10. Framework
-    - Serializes TaskResponse to JSON
+    - Serializes TodoResponse to JSON
     - Sends HTTP response
 ```
 
@@ -1304,7 +1303,7 @@ Use path variables for resource identifiers. Use query parameters for filters an
 ```json
 {
   "id": 42,
-  "title": "Complete documentation",
+  "text": "Complete documentation",
   "description": "Write API documentation",
   "completed": false,
   "priority": "HIGH",
@@ -1325,27 +1324,27 @@ Use path variables for resource identifiers. Use query parameters for filters an
 
 ```java
 // Repository
-public interface TaskRepository extends JpaRepository<TaskEntity, Long> {
-    Page<TaskEntity> findByUserId(Long userId, Pageable pageable);
+public interface TodoRepository extends JpaRepository<TodoEntity, Long> {
+    Page<TodoEntity> findByUserId(Long userId, Pageable pageable);
 }
 
 // Service
 @Transactional(readOnly = true)
-public Page<TaskSummary> getUserTasksPaginated(Long userId, int page, int size) {
+public Page<TodoSummary> getUserTodosPaginated(Long userId, int page, int size) {
     Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
-    Page<TaskEntity> taskPage = taskRepository.findByUserId(userId, pageable);
-    return taskPage.map(taskMapper::toSummary);
+    Page<TodoEntity> todoPage = todoRepository.findByUserId(userId, pageable);
+    return todoPage.map(todoMapper::toSummary);
 }
 
 // Controller
 @GetMapping
-public ResponseEntity<Page<TaskSummary>> getUserTasks(
+public ResponseEntity<Page<TodoSummary>> getUserTodos(
         @PathVariable Long userId,
         @RequestParam(defaultValue = "0") int page,
         @RequestParam(defaultValue = "20") int size) {
     
-    Page<TaskSummary> tasks = taskService.getUserTasksPaginated(userId, page, size);
-    return ResponseEntity.ok(tasks);
+    Page<TodoSummary> todos = todoService.getUserTodosPaginated(userId, page, size);
+    return ResponseEntity.ok(todos);
 }
 ```
 
@@ -1353,40 +1352,40 @@ public ResponseEntity<Page<TaskSummary>> getUserTasks(
 
 ```java
 // Repository with Specification
-public interface TaskRepository extends JpaRepository<TaskEntity, Long>, 
-                                       JpaSpecificationExecutor<TaskEntity> {
+public interface TodoRepository extends JpaRepository<TodoEntity, Long>, 
+                                       JpaSpecificationExecutor<TodoEntity> {
 }
 
 // Specification builder
-public class TaskSpecifications {
+public class TodoSpecifications {
     
-    public static Specification<TaskEntity> hasUserId(Long userId) {
+    public static Specification<TodoEntity> hasUserId(Long userId) {
         return (root, query, cb) -> cb.equal(root.get("user").get("id"), userId);
     }
     
-    public static Specification<TaskEntity> hasCompleted(Boolean completed) {
+    public static Specification<TodoEntity> hasCompleted(Boolean completed) {
         return (root, query, cb) -> cb.equal(root.get("completed"), completed);
     }
     
-    public static Specification<TaskEntity> hasPriority(TaskPriority priority) {
+    public static Specification<TodoEntity> hasPriority(TodoPriority priority) {
         return (root, query, cb) -> cb.equal(root.get("priority"), priority);
     }
 }
 
 // Service
 @Transactional(readOnly = true)
-public List<TaskSummary> filterTasks(Long userId, Boolean completed, TaskPriority priority) {
-    Specification<TaskEntity> spec = Specification.where(TaskSpecifications.hasUserId(userId));
+public List<TodoSummary> filterTodos(Long userId, Boolean completed, TodoPriority priority) {
+    Specification<TodoEntity> spec = Specification.where(TodoSpecifications.hasUserId(userId));
     
     if (completed != null) {
-        spec = spec.and(TaskSpecifications.hasCompleted(completed));
+        spec = spec.and(TodoSpecifications.hasCompleted(completed));
     }
     if (priority != null) {
-        spec = spec.and(TaskSpecifications.hasPriority(priority));
+        spec = spec.and(TodoSpecifications.hasPriority(priority));
     }
     
-    List<TaskEntity> tasks = taskRepository.findAll(spec);
-    return taskMapper.toSummaryList(tasks);
+    List<TodoEntity> todos = todoRepository.findAll(spec);
+    return todoMapper.toSummaryList(todos);
 }
 ```
 
@@ -1395,10 +1394,10 @@ public List<TaskSummary> filterTasks(Long userId, Boolean completed, TaskPriorit
 ```java
 // Entity
 @Entity
-@Table(name = "tasks")
-@SQLDelete(sql = "UPDATE tasks SET deleted_at = NOW() WHERE id = ?")
-@Where(clause = "deleted_at IS NULL")
-public class TaskEntity {
+@Table(name = "todos")
+@SQLDelete(sql = "UPDATE todos SET deleted_at = NOW() WHERE id = ?")
+@SQLRestriction("deleted_at IS NULL")
+public class TodoEntity {
     // ... other fields ...
     
     @Column(name = "deleted_at")
@@ -1407,9 +1406,9 @@ public class TaskEntity {
 
 // Service
 @Transactional
-public void deleteTask(Long userId, Long taskId) {
-    TaskEntity task = findTaskByIdAndUser(taskId, userId);
-    taskRepository.delete(task); // Triggers soft delete SQL
+public void deleteTodo(Long userId, Long todoId) {
+    TodoEntity todo = findByIdAndUser(todoId, userId);
+    todoRepository.delete(todo); // Triggers soft delete SQL
 }
 ```
 
@@ -1440,9 +1439,9 @@ public abstract class AuditableEntity {
 
 // Entity extends auditable base
 @Entity
-@Table(name = "tasks")
-public class TaskEntity extends AuditableEntity {
-    // ... task-specific fields ...
+@Table(name = "todos")
+public class TodoEntity extends AuditableEntity {
+    // ... todo-specific fields ...
 }
 
 // Enable JPA Auditing
@@ -1474,33 +1473,32 @@ Entities should not be pure data holders. While complex business logic belongs i
 ```java
 // Anti-pattern: Anemic entity
 @Entity
-public class TaskEntity {
+public class TodoEntity {
     private LocalDateTime dueDate;
     private Boolean completed;
     // Only getters/setters, no behavior
 }
 
 // Service does all the work
-public class TaskService {
-    public boolean isOverdue(TaskEntity task) {
-        return !task.getCompleted() && 
-               task.getDueDate().isBefore(LocalDateTime.now());
+public class TodoService {
+    public boolean isOverdue(TodoEntity todo) {
+        return !todo.getCompleted() && 
+               todo.getDueDate().isBefore(LocalDateTime.now());
     }
 }
 
 // Better: Entity with domain methods
 @Entity
-public class TaskEntity {
+public class TodoEntity {
     private LocalDateTime dueDate;
     private Boolean completed;
     
     public boolean isOverdue() {
-        return !completed && dueDate.isBefore(LocalDateTime.now());
+        return !completed && dueDate != null && dueDate.isBefore(LocalDateTime.now());
     }
     
     public void markComplete() {
         this.completed = true;
-        this.updatedAt = LocalDateTime.now();
     }
 }
 ```
@@ -1512,23 +1510,23 @@ Controllers should never directly access repositories.
 ```java
 // Anti-pattern: Controller accesses repository directly
 @RestController
-public class TaskController {
-    private final TaskRepository taskRepository;
+public class TodoController {
+    private final TodoRepository todoRepository;
     
     @GetMapping("/{id}")
-    public TaskEntity getTask(@PathVariable Long id) {
-        return taskRepository.findById(id).orElseThrow(); // Wrong!
+    public TodoEntity getTodo(@PathVariable Long id) {
+        return todoRepository.findById(id).orElseThrow(); // Wrong!
     }
 }
 
 // Correct: Controller uses service
 @RestController
-public class TaskController {
-    private final TaskService taskService;
+public class TodoController {
+    private final TodoService todoService;
     
     @GetMapping("/{id}")
-    public TaskResponse getTask(@PathVariable Long id) {
-        return taskService.getTask(id); // Right!
+    public TodoResponse getTodo(@PathVariable Long id) {
+        return todoService.getTodo(id); // Right!
     }
 }
 ```
@@ -1540,16 +1538,16 @@ Never expose entities directly in API responses.
 ```java
 // Anti-pattern: Returning entity from controller
 @GetMapping("/{id}")
-public ResponseEntity<TaskEntity> getTask(@PathVariable Long id) {
-    TaskEntity task = taskService.getTaskEntity(id); // Returns entity
-    return ResponseEntity.ok(task); // Exposes internal structure!
+public ResponseEntity<TodoEntity> getTodo(@PathVariable Long id) {
+    TodoEntity todo = todoService.getTodoEntity(id); // Returns entity
+    return ResponseEntity.ok(todo); // Exposes internal structure!
 }
 
 // Correct: Return DTO (record)
 @GetMapping("/{id}")
-public ResponseEntity<TaskResponse> getTask(@PathVariable Long id) {
-    TaskResponse task = taskService.getTask(id); // Returns DTO
-    return ResponseEntity.ok(task);
+public ResponseEntity<TodoResponse> getTodo(@PathVariable Long id) {
+    TodoResponse todo = todoService.getTodo(id); // Returns DTO
+    return ResponseEntity.ok(todo);
 }
 ```
 
@@ -1560,21 +1558,21 @@ Avoid transactions in wrong layers.
 ```java
 // Anti-pattern: Transaction in controller
 @RestController
-public class TaskController {
+public class TodoController {
     
     @PostMapping
     @Transactional // Wrong layer!
-    public TaskResponse createTask(@RequestBody CreateTaskRequest request) {
+    public TodoResponse createTodo(@RequestBody CreateTodoRequest request) {
         // ...
     }
 }
 
 // Correct: Transaction in service
 @Service
-public class TaskService {
+public class TodoService {
     
     @Transactional // Correct layer
-    public TaskResponse createTask(CreateTaskRequest request) {
+    public TodoResponse createTodo(CreateTodoRequest request) {
         // ...
     }
 }
@@ -1586,35 +1584,34 @@ Mappers should only transform data, not make decisions.
 
 ```java
 // Anti-pattern: Business logic in mapper
-public class TaskMapper {
-    public TaskResponse toResponse(TaskEntity entity) {
+public class TodoMapper {
+    public TodoResponse toResponse(TodoEntity entity) {
         // Mapping code...
-        TaskResponse response = new TaskResponse(...);
+        TodoResponse response = new TodoResponse(...);
         
         // Business logic doesn't belong here!
-        if (entity.getPriority() == TaskPriority.URGENT && !entity.getCompleted()) {
-            // Cannot modify record after creation - would need builder pattern
-            // This approach is fundamentally flawed with immutable DTOs
+        if (entity.getPriority() == TodoPriority.HIGH && !entity.getCompleted()) {
+            // This is wrong - mappers should only transform
         }
         return response;
     }
 }
 
 // Correct: Keep mapper simple, handle display logic in service or presentation layer
-public class TaskMapper {
-    public TaskResponse toResponse(TaskEntity entity) {
-        TaskResponse.CategorySummary categoryInfo = null;
+public class TodoMapper {
+    public TodoResponse toResponse(TodoEntity entity) {
+        TodoResponse.CategorySummary categoryInfo = null;
         if (entity.getCategory() != null) {
-            categoryInfo = new TaskResponse.CategorySummary(
+            categoryInfo = new TodoResponse.CategorySummary(
                 entity.getCategory().getId(),
                 entity.getCategory().getName()
             );
         }
         
         // Pure transformation only
-        return new TaskResponse(
+        return new TodoResponse(
             entity.getId(),
-            entity.getTitle(),
+            entity.getText(),
             entity.getDescription(),
             entity.getCompleted(),
             entity.getPriority(),
@@ -1637,32 +1634,32 @@ public class TaskMapper {
 ```java
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
-class TaskRepositoryTest {
+class TodoRepositoryTest {
     
     @Autowired
-    private TaskRepository taskRepository;
+    private TodoRepository todoRepository;
     
     @Autowired
     private TestEntityManager entityManager;
     
     @Test
-    void findByUserIdAndCompleted_ReturnsCorrectTasks() {
+    void findByUserIdAndCompleted_ReturnsCorrectTodos() {
         // Given
         UserEntity user = createAndPersistUser();
-        TaskEntity completedTask = createTask(user, true);
-        TaskEntity activeTask = createTask(user, false);
-        entityManager.persist(completedTask);
-        entityManager.persist(activeTask);
+        TodoEntity completedTodo = createTodo(user, true);
+        TodoEntity activeTodo = createTodo(user, false);
+        entityManager.persist(completedTodo);
+        entityManager.persist(activeTodo);
         entityManager.flush();
         
         // When
-        List<TaskEntity> completed = taskRepository.findByUserIdAndCompleted(
+        List<TodoEntity> completed = todoRepository.findByUserIdAndCompleted(
             user.getId(), true
         );
         
         // Then
         assertThat(completed).hasSize(1);
-        assertThat(completed.get(0).getId()).isEqualTo(completedTask.getId());
+        assertThat(completed.get(0).getId()).isEqualTo(completedTodo.getId());
     }
 }
 ```
@@ -1670,27 +1667,27 @@ class TaskRepositoryTest {
 **Mapper Layer Testing:**
 
 ```java
-class TaskMapperTest {
+class TodoMapperTest {
     
-    private TaskMapper taskMapper = new TaskMapper();
+    private TodoMapper todoMapper = new TodoMapper();
     
     @Test
     void toEntity_MapsFieldsCorrectly() {
         // Given
-        CreateTaskRequest request = new CreateTaskRequest(
-            "Test Task",
+        CreateTodoRequest request = new CreateTodoRequest(
+            "Test Todo",
             "Description",
-            TaskPriority.HIGH,
+            TodoPriority.HIGH,
             null
         );
         
         // When
-        TaskEntity entity = taskMapper.toEntity(request);
+        TodoEntity entity = todoMapper.toEntity(request);
         
         // Then
-        assertThat(entity.getTitle()).isEqualTo("Test Task");
+        assertThat(entity.getText()).isEqualTo("Test Todo");
         assertThat(entity.getDescription()).isEqualTo("Description");
-        assertThat(entity.getPriority()).isEqualTo(TaskPriority.HIGH);
+        assertThat(entity.getPriority()).isEqualTo(TodoPriority.HIGH);
         assertThat(entity.getCompleted()).isFalse();
         assertThat(entity.getId()).isNull(); // Not set by mapper
     }
@@ -1698,11 +1695,11 @@ class TaskMapperTest {
     @Test
     void toResponse_HandlesNullCategory() {
         // Given
-        TaskEntity entity = createTaskEntity();
+        TodoEntity entity = createTodoEntity();
         entity.setCategory(null);
         
         // When
-        TaskResponse response = taskMapper.toResponse(entity);
+        TodoResponse response = todoMapper.toResponse(entity);
         
         // Then
         assertThat(response.category()).isNull();
@@ -1714,10 +1711,10 @@ class TaskMapperTest {
 
 ```java
 @ExtendWith(MockitoExtension.class)
-class TaskServiceTest {
+class TodoServiceTest {
     
     @Mock
-    private TaskRepository taskRepository;
+    private TodoRepository todoRepository;
     
     @Mock
     private UserRepository userRepository;
@@ -1726,70 +1723,70 @@ class TaskServiceTest {
     private CategoryRepository categoryRepository;
     
     @Mock
-    private TaskMapper taskMapper;
+    private TodoMapper todoMapper;
     
     @InjectMocks
-    private TaskService taskService;
+    private TodoService todoService;
     
     @Test
-    void createTask_Success() {
+    void createTodo_Success() {
         // Given
         Long userId = 1L;
-        CreateTaskRequest request = new CreateTaskRequest(
+        CreateTodoRequest request = new CreateTodoRequest(
             "Test",
             null,
-            TaskPriority.MEDIUM,
+            TodoPriority.MEDIUM,
             null
         );
         
         UserEntity user = new UserEntity();
         user.setId(userId);
         
-        TaskEntity entity = new TaskEntity();
-        TaskEntity savedEntity = new TaskEntity();
+        TodoEntity entity = new TodoEntity();
+        TodoEntity savedEntity = new TodoEntity();
         savedEntity.setId(1L);
         
-        TaskResponse expected = new TaskResponse(
-            1L, "Test", null, false, TaskPriority.MEDIUM,
+        TodoResponse expected = new TodoResponse(
+            1L, "Test", null, false, TodoPriority.MEDIUM,
             LocalDateTime.now(), LocalDateTime.now(), null
         );
         
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-        when(taskMapper.toEntity(request)).thenReturn(entity);
-        when(taskRepository.countByUserIdAndCompleted(userId, false)).thenReturn(50L);
-        when(taskRepository.save(entity)).thenReturn(savedEntity);
-        when(taskMapper.toResponse(savedEntity)).thenReturn(expected);
+        when(todoMapper.toEntity(request)).thenReturn(entity);
+        when(todoRepository.countByUserIdAndCompleted(userId, false)).thenReturn(50L);
+        when(todoRepository.save(entity)).thenReturn(savedEntity);
+        when(todoMapper.toResponse(savedEntity)).thenReturn(expected);
         
         // When
-        TaskResponse result = taskService.createTask(userId, request);
+        TodoResponse result = todoService.createTodo(userId, request);
         
         // Then
         assertThat(result.id()).isEqualTo(1L);
-        verify(taskRepository).save(entity);
-        verify(taskMapper).toResponse(savedEntity);
+        verify(todoRepository).save(entity);
+        verify(todoMapper).toResponse(savedEntity);
     }
     
     @Test
-    void createTask_ExceedsLimit_ThrowsException() {
+    void createTodo_ExceedsLimit_ThrowsException() {
         // Given
         Long userId = 1L;
-        CreateTaskRequest request = new CreateTaskRequest(
+        CreateTodoRequest request = new CreateTodoRequest(
             "Test",
             null,
-            TaskPriority.MEDIUM,
+            TodoPriority.MEDIUM,
             null
         );
         
         UserEntity user = new UserEntity();
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-        when(taskRepository.countByUserIdAndCompleted(userId, false)).thenReturn(100L);
+        when(todoRepository.countByUserIdAndCompleted(userId, false)).thenReturn(100L);
         
         // When/Then
-        assertThatThrownBy(() -> taskService.createTask(userId, request))
+        assertThatThrownBy(() -> todoService.createTodo(userId, request))
             .isInstanceOf(BusinessRuleException.class)
-            .hasMessageContaining("maximum of 100 active tasks");
+            .hasMessageContaining("maximum of 100 active todos");
         
-        verify(taskRepository, never()).save(any());
+        verify(todoRepository, never()).save(any());
     }
 }
 ```
@@ -1797,62 +1794,62 @@ class TaskServiceTest {
 **Controller Layer Testing:**
 
 ```java
-@WebMvcTest(TaskController.class)
-class TaskControllerTest {
+@WebMvcTest(TodoController.class)
+class TodoControllerTest {
     
     @Autowired
     private MockMvc mockMvc;
     
     @MockBean
-    private TaskService taskService;
+    private TodoService todoService;
     
     @Test
-    void createTask_ValidRequest_Returns201() throws Exception {
+    void createTodo_ValidRequest_Returns201() throws Exception {
         // Given
         Long userId = 1L;
         
-        TaskResponse response = new TaskResponse(
+        TodoResponse response = new TodoResponse(
             1L,
-            "Test Task",
+            "Test Todo",
             null,
             false,
-            TaskPriority.HIGH,
+            TodoPriority.HIGH,
             LocalDateTime.now(),
             LocalDateTime.now(),
             null
         );
         
-        when(taskService.createTask(eq(userId), any(CreateTaskRequest.class)))
+        when(todoService.createTodo(eq(userId), any(CreateTodoRequest.class)))
             .thenReturn(response);
         
         // When/Then
-        mockMvc.perform(post("/api/users/{userId}/tasks", userId)
+        mockMvc.perform(post("/api/users/{userId}/todos", userId)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                     {
-                        "title": "Test Task",
+                        "text": "Test Todo",
                         "priority": "HIGH"
                     }
                     """))
             .andExpect(status().isCreated())
             .andExpect(jsonPath("$.id").value(1))
-            .andExpect(jsonPath("$.title").value("Test Task"));
+            .andExpect(jsonPath("$.text").value("Test Todo"));
     }
     
     @Test
-    void createTask_InvalidRequest_Returns400() throws Exception {
+    void createTodo_InvalidRequest_Returns400() throws Exception {
         // When/Then
-        mockMvc.perform(post("/api/users/{userId}/tasks", 1L)
+        mockMvc.perform(post("/api/users/{userId}/todos", 1L)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                     {
-                        "title": "",
+                        "text": "",
                         "priority": "INVALID"
                     }
                     """))
             .andExpect(status().isBadRequest());
         
-        verifyNoInteractions(taskService);
+        verifyNoInteractions(todoService);
     }
 }
 ```
@@ -1866,40 +1863,40 @@ class TaskControllerTest {
 ```java
 // Problem: N+1 queries
 @Transactional(readOnly = true)
-public List<TaskResponse> getTasks(Long userId) {
-    List<TaskEntity> tasks = taskRepository.findByUserId(userId); // 1 query
+public List<TodoResponse> getTodos(Long userId) {
+    List<TodoEntity> todos = todoRepository.findByUserId(userId); // 1 query
     
-    return tasks.stream()
-        .map(task -> {
-            task.getCategory().getName(); // N queries (lazy loading)
-            return taskMapper.toResponse(task);
+    return todos.stream()
+        .map(todo -> {
+            todo.getCategory().getName(); // N queries (lazy loading)
+            return todoMapper.toResponse(todo);
         })
         .collect(Collectors.toList());
 }
 
 // Solution: Use JOIN FETCH
-@Query("SELECT t FROM TaskEntity t LEFT JOIN FETCH t.category WHERE t.user.id = :userId")
-List<TaskEntity> findByUserIdWithCategory(@Param("userId") Long userId);
+@Query("SELECT t FROM TodoEntity t LEFT JOIN FETCH t.category WHERE t.user.id = :userId")
+List<TodoEntity> findByUserIdWithCategory(@Param("userId") Long userId);
 ```
 
 ### Batch Operations
 
 ```java
 // Inefficient: Individual saves
-public void createMultipleTasks(List<CreateTaskRequest> requests) {
-    for (CreateTaskRequest request : requests) {
-        TaskEntity entity = taskMapper.toEntity(request);
-        taskRepository.save(entity); // Individual INSERT
+public void createMultipleTodos(List<CreateTodoRequest> requests) {
+    for (CreateTodoRequest request : requests) {
+        TodoEntity entity = todoMapper.toEntity(request);
+        todoRepository.save(entity); // Individual INSERT
     }
 }
 
 // Better: Batch save
-public void createMultipleTasks(List<CreateTaskRequest> requests) {
-    List<TaskEntity> entities = requests.stream()
-        .map(taskMapper::toEntity)
+public void createMultipleTodos(List<CreateTodoRequest> requests) {
+    List<TodoEntity> entities = requests.stream()
+        .map(todoMapper::toEntity)
         .collect(Collectors.toList());
     
-    taskRepository.saveAll(entities); // Batch INSERT
+    todoRepository.saveAll(entities); // Batch INSERT
 }
 ```
 
@@ -1907,41 +1904,41 @@ public void createMultipleTasks(List<CreateTaskRequest> requests) {
 
 ```java
 // Inefficient: Load full entities for summary
-public List<TaskSummary> getTaskSummaries(Long userId) {
-    List<TaskEntity> tasks = taskRepository.findByUserId(userId); // Full entities
-    return taskMapper.toSummaryList(tasks);
+public List<TodoSummary> getTodoSummaries(Long userId) {
+    List<TodoEntity> todos = todoRepository.findByUserId(userId); // Full entities
+    return todoMapper.toSummaryList(todos);
 }
 
 // Better: Use projection
-public interface TaskSummaryProjection {
+public interface TodoSummaryProjection {
     Long getId();
-    String getTitle();
+    String getText();
     Boolean getCompleted();
-    TaskPriority getPriority();
+    TodoPriority getPriority();
 }
 
-@Query("SELECT t.id as id, t.title as title, t.completed as completed, " +
-       "t.priority as priority FROM TaskEntity t WHERE t.user.id = :userId")
-List<TaskSummaryProjection> findSummariesByUserId(@Param("userId") Long userId);
+@Query("SELECT t.id as id, t.text as text, t.completed as completed, " +
+       "t.priority as priority FROM TodoEntity t WHERE t.user.id = :userId")
+List<TodoSummaryProjection> findSummariesByUserId(@Param("userId") Long userId);
 ```
 
 ### Caching
 
 ```java
 @Service
-public class TaskService {
+public class TodoService {
     
-    // Cache user task counts
-    @Cacheable(value = "taskCounts", key = "#userId")
+    // Cache user todo counts
+    @Cacheable(value = "todoCounts", key = "#userId")
     @Transactional(readOnly = true)
-    public Long getUserTaskCount(Long userId) {
-        return taskRepository.countByUserId(userId);
+    public Long getUserTodoCount(Long userId) {
+        return todoRepository.countByUserId(userId);
     }
     
     // Evict cache on modifications
-    @CacheEvict(value = "taskCounts", key = "#userId")
+    @CacheEvict(value = "todoCounts", key = "#userId")
     @Transactional
-    public TaskResponse createTask(Long userId, CreateTaskRequest request) {
+    public TodoResponse createTodo(Long userId, CreateTodoRequest request) {
         // ...
     }
 }
