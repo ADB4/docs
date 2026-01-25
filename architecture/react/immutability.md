@@ -1,43 +1,40 @@
 # Pass by Reference/Value & Shallow/Deep Copies in React TypeScript
+
 # Table of Contents
 
-#### Part 1: Pass by Value vs Pass by Reference
-- [**Pass by Value (Primitives)**](#pass-by-value-primitives)
-- [**Pass by Reference (Objects)**](#pass-by-reference-objects)
-- [**Arrays are Objects (Pass by Reference)**](#arrays-are-objects-pass-by-reference)
+# Table of Contents
 
-#### Part 2: Shallow vs Deep Copies
-- [**Shallow Copy**](#shallow-copy)
-  - [Shallow Copy Methods](#shallow-copy-methods)
-  - [Shallow Copy Behavior](#shallow-copy-behavior)
-- [**Deep Copy**](#deep-copy)
-  - [Deep Copy Methods](#deep-copy-methods)
-  - [Deep Copy Behavior](#deep-copy-behavior)
+- [1: Pass by Value vs Pass by Reference](#1-pass-by-value-vs-pass-by-reference)
+  - [Pass by Value (Primitives)](#pass-by-value-primitives)
+  - [Pass by Reference (Objects)](#pass-by-reference-objects)
+  - [Arrays are Objects (Pass by Reference)](#arrays-are-objects-pass-by-reference)
+- [2: Shallow vs Deep Copies](#2-shallow-vs-deep-copies)
+  - [Shallow Copy](#shallow-copy)
+    - [Shallow Copy Methods](#shallow-copy-methods)
+    - [Shallow Copy Behavior](#shallow-copy-behavior)
+  - [Deep Copy](#deep-copy)
+    - [Deep Copy Methods](#deep-copy-methods)
+    - [Deep Copy Behavior](#deep-copy-behavior)
+- [3: React State and Immutability](#3-react-state-and-immutability)
+  - [Why Immutability Matters in React](#why-immutability-matters-in-react)
+  - [Common React State Update Patterns](#common-react-state-update-patterns)
+    - [Updating Arrays](#updating-arrays)
+    - [Updating Nested Objects](#updating-nested-objects)
+    - [Using Immer for Complex Updates](#using-immer-for-complex-updates)
+- [4: Common Pitfalls](#4-common-pitfalls)
+  - [Array Methods that Mutate](#array-methods-that-mutate)
+  - [Shallow Copy Pitfall with Nested Data](#shallow-copy-pitfall-with-nested-data)
+  - [Object.assign() Pitfall](#objectassign-pitfall)
+  - [Destructuring Doesn't Deep Copy](#destructuring-doesnt-deep-copy)
+  - [Setting State with Stale Values](#setting-state-with-stale-values)
+- [5: Best Practices](#5-best-practices)
+  - [Use Functional Updates for State Based on Previous State](#use-functional-updates-for-state-based-on-previous-state)
+  - [Use Spread Operator for Shallow Copies](#use-spread-operator-for-shallow-copies)
+  - [Use structuredClone for Deep Copies (When Needed)](#use-structuredclone-for-deep-copies-when-needed)
+  - [Avoid Mutating Methods](#avoid-mutating-methods)
+- [Quick Reference](#quick-reference)
 
-#### Part 3: React State and Immutability
-- [**Why Immutability Matters in React**](#why-immutability-matters-in-react)
-- [**Common React State Update Patterns**](#common-react-state-update-patterns)
-  - [Updating Arrays](#updating-arrays)
-  - [Updating Nested Objects](#updating-nested-objects)
-  - [Using Immer for Complex Updates](#using-immer-for-complex-updates)
-
-#### Extra: Common Pitfalls
-- [**Array Methods that Mutate**](#array-methods-that-mutate)
-- [**Shallow Copy Pitfall with Nested Data**](#shallow-copy-pitfall-with-nested-data)
-- [**Object.assign() Pitfall**](#objectassign-pitfall)
-- [**Destructuring Doesn't Deep Copy**](#destructuring-doesnt-deep-copy)
-- [**Setting State with Stale Values**](#setting-state-with-stale-values)
-
-#### Extra: Best Practices
-- [**Use Functional Updates for State Based on Previous State**](#use-functional-updates-for-state-based-on-previous-state)
-- [**Use Spread Operator for Shallow Copies**](#use-spread-operator-for-shallow-copies)
-- [**Use structuredClone for Deep Copies (When Needed)**](#use-structuredclone-for-deep-copies-when-needed)
-- [**Avoid Mutating Methods**](#avoid-mutating-methods)
-
-#### Reference
-- [**Quick Reference**](#quick-reference)
-
-## Part 1: Pass by Value vs Pass by Reference
+## 1: Pass by Value vs Pass by Reference
 
 In JavaScript/TypeScript, the way values are passed depends on the data type:
 
@@ -125,7 +122,7 @@ console.log(todos[0].completed); // true (original array modified)
 console.log(todos === sameTodos); // true (same reference)
 ```
 
-## Part 2: Shallow vs Deep Copies
+## 2: Shallow vs Deep Copies
 
 ### Shallow Copy
 
@@ -271,7 +268,7 @@ console.log(originalTodo.tags === deepCopy.tags);           // false
 console.log(originalTodo.metadata === deepCopy.metadata);   // false
 ```
 
-## Part 3: React State and Immutability
+## 3: React State and Immutability
 
 ### Why Immutability Matters in React
 
@@ -471,7 +468,7 @@ function TodoWithImmer() {
 }
 ```
 
-## Part 4: Common Pitfalls
+## 4: Common Pitfalls
 
 ### Array Methods that Mutate
 
@@ -634,7 +631,7 @@ function TodoCounter() {
 }
 ```
 
-## Part 5: Best Practices
+## 5: Best Practices
 
 ### Use Functional Updates for State Based on Previous State
 

@@ -2,41 +2,38 @@
 
 # Table of Contents
 
-#### Part 1: Control Flow
-- [**Conditionals**](#conditionals)
-  - [Switch Statements](#switch-statements)
-  - [Ternary Operator](#ternary-operator)
-- [**Iteration**](#iteration)
-  - [for...of Loop (Recommended Approach)](#forof-loop-recommended-approach)
-  - [for...in Loop (For Objects)](#forin-loop-for-objects)
-  - [Traditional for Loop](#traditional-for-loop-not-wrong-but-less-readable)
-  - [while Loop](#while-loop)
-
-#### Part 2: TypeScript-Specific Features
-- [**Type Guards and Type Narrowing**](#type-guards-and-type-narrowing)
-- [**Discriminated Unions**](#discriminated-unions)
-- [**Optional Chaining and Nullish Coalescing**](#optional-chaining-and-nullish-coalescing)
-- [**Array Methods**](#array-methods)
-- [**Object Iteration Methods**](#object-iteration-methods)
-
-#### Extra: Best Practices
-- [**Use Early Returns to Reduce Nesting**](#use-early-returns-to-reduce-nesting)
-- [**Prefer for...of Over Traditional for Loop**](#prefer-forof-over-traditional-for-loop)
-- [**Use const for Loop Variables**](#use-const-for-loop-variables)
-- [**Type Your Variables**](#type-your-variables)
-- [**Use Enums for Constants**](#use-enums-for-constants)
-- [**Create Type Predicates for Reusable Type Guards**](#create-type-predicates-for-reusable-type-guards)
-- [**Exhaustiveness Checking**](#exhaustiveness-checking)
-
-#### Extra: Common Pitfalls and Caveats
-- [**Truthy/Falsy Checks Can Be Misleading**](#truthyfalsy-checks-can-be-misleading)
-- [**Don't Use for...in for Arrays (use for...OF)**](#dont-use-forin-for-arrays-use-forof)
-- [**Async Operations in Loops**](#async-operations-in-loops)
-- [**Don't Modify Arrays While Iterating**](#dont-modify-arrays-while-iterating)
-- [**Switch Statement Fall-Through**](#switch-statement-fall-through)
-- [**Optional Chaining Doesn't Prevent All Errors**](#optional-chaining-doesnt-prevent-all-errors)
-- [**Creating Functions Inside Loops**](#creating-functions-inside-loops)
-
+- [Using a Todo List App as Example](#using-a-todo-list-app-as-example)
+- [1: Control Flow](#part-1-control-flow)
+  - [Conditionals](#conditionals)
+    - [Switch Statements](#switch-statements)
+    - [Ternary Operator](#ternary-operator)
+  - [Iteration](#iteration)
+    - [for...of Loop (Recommended Approach)](#forof-loop-recommended-approach)
+    - [for...in Loop (For Objects)](#forin-loop-for-objects)
+    - [Traditional for Loop (not "wrong", but less readable)](#traditional-for-loop-not-wrong-but-less-readable)
+    - [while Loop](#while-loop)
+- [2: TypeScript-Specific Features](#part-2-typescript-specific-features)
+  - [Type Guards and Type Narrowing](#type-guards-and-type-narrowing)
+  - [Discriminated Unions](#discriminated-unions)
+  - [Optional Chaining and Nullish Coalescing](#optional-chaining-and-nullish-coalescing)
+  - [Array Methods](#array-methods)
+  - [Object Iteration Methods](#object-iteration-methods)
+- [3: Best Practices](#part-3-best-practices)
+  - [Use Early Returns to Reduce Nesting](#use-early-returns-to-reduce-nesting)
+  - [Prefer for...of Over Traditional for Loop](#prefer-forof-over-traditional-for-loop)
+  - [Use const for Loop Variables](#use-const-for-loop-variables)
+  - [Type Your Variables](#type-your-variables)
+  - [Use Enums for Constants](#use-enums-for-constants)
+  - [Create Type Predicates for Reusable Type Guards](#create-type-predicates-for-reusable-type-guards)
+  - [Exhaustiveness Checking](#exhaustiveness-checking)
+- [4: Common Pitfalls and Caveats](#part-4-common-pitfalls-and-caveats)
+  - [Truthy/Falsy Checks Can Be Misleading](#truthyfalsy-checks-can-be-misleading)
+  - [Don't Use for...in for Arrays (use for...OF)](#dont-use-forin-for-arrays-use-forof)
+  - [Async Operations in Loops](#async-operations-in-loops)
+  - [Don't Modify Arrays While Iterating](#dont-modify-arrays-while-iterating)
+  - [Switch Statement Fall-Through](#switch-statement-fall-through)
+  - [Optional Chaining Doesn't Prevent All Errors](#optional-chaining-doesnt-prevent-all-errors)
+  - [Creating Functions Inside Loops](#creating-functions-inside-loops)
 
 ## Using a Todo List App as Example
 
