@@ -41,7 +41,9 @@ describe('TodoList', () => {
 | 3 | `getByPlaceholderText` | Inputs with placeholder text |
 | 4 | `getByText` | Non-interactive text content |
 | 5 | `getByDisplayValue` | Current value of form elements |
-| 6 | `getByTestId` | Last resort when no semantic query works |
+| 6 | `getByAltText` | Images, areas, custom elements with alt text |
+| 7 | `getByTitle` | Elements with a title attribute |
+| 8 | `getByTestId` | Last resort when no semantic query works |
 
 ### query variants
 
@@ -442,6 +444,10 @@ describe('TodoForm - Complete Submission', () => {
 
 ## 3. testing api calls
 
+> when mocking fetch directly, `vi.stubGlobal('fetch', vi.fn()...)` is more robust
+> than `global.fetch = vi.fn()` because it integrates with vitest's
+> `unstubAllGlobals` config option for automatic cleanup.
+
 ### basic fetch mocking
 
 ```typescript
@@ -449,7 +455,7 @@ import { vi, describe, it, expect, beforeEach } from 'vitest';
 
 describe('TodoList with API', () => {
   beforeEach(() => {
-    vi.restoreAllMocks();
+    vi.resetAllMocks();
   });
 
   it('displays todos fetched from API', async () => {
@@ -571,219 +577,6 @@ describe('Creating todos via API', () => {
     await user.click(screen.getByRole('button', { name: /add todo/i }));
 
     expect(await screen.findByText('Brand new todo')).toBeInTheDocument();
-  });
-});
-```
-
-### using MSW (mock service worker)
-
-```typescript
-// src/test/mocks/handlers.ts
-import { http, HttpResponse } from 'msw';
-
-export const handlers = [
-  http.get('/api/todos', () => {
-    return HttpResponse.json([
-      { id: '1', title: 'Test todo', completed: false },
-    ]);
-  }),
-
-  http.post('/api/todos', async ({ request }) => {
-    const body = await request.json();
-    return HttpResponse.json({ id: '2', ...body }, { status: 201 });
-  }),
-
-  http.delete('/api/todos/:id', () => {
-    return new HttpResponse(null, { status: 204 });
-  }),
-
-  http.patch('/api/todos/:id', async ({ request, params }) => {
-    const body = await request.json();
-    return HttpResponse.json({ id: params.id, ...body });
-  }),
-];
-
-// src/test/mocks/server.ts
-import { setupServer } from 'msw/node';
-import { handlers } from './handlers';
-
-export const server = setupServer(...handlers);
-
-// add to src/test/setup.ts
-import { server } from './mocks/server';
-
-beforeAll(() => server.listen());
-afterEach(() => server.resetHandlers());
-afterAll(() => server.close());
-```
-
-### testing with MSW - error handling
-
-```typescript
-import { http, HttpResponse } from 'msw';
-import { server } from './mocks/server';
-
-describe('TodoList error handling', () => {
-  it('handles server error gracefully', async () => {
-    server.use(
-      http.get('/api/todos', () => {
-        return new HttpResponse(null, { status: 500 });
-      })
-    );
-
-    render(<TodoList />);
-
-    expect(await screen.findByText(/something went wrong/i)).toBeInTheDocument();
-  });
-
-  it('handles network error', async () => {
-    server.use(
-      http.get('/api/todos', () => {
-        return HttpResponse.error();
-      })
-    );
-
-    render(<TodoList />);
-
-    expect(await screen.findByText(/network error/i)).toBeInTheDocument();
-  });
-
-  it('handles 404 not found', async () => {
-    server.use(
-      http.get('/api/todos', () => {
-        return new HttpResponse(null, { status: 404 });
-      })
-    );
-
-    render(<TodoList />);
-
-    expect(await screen.findByText(/not found/i)).toBeInTheDocument();
-  });
-});
-```
-
-### testing slow responses
-
-```typescript
-describe('Loading states', () => {
-  it('shows and hides loading indicator', async () => {
-    server.use(
-      http.get('/api/todos', async () => {
-        await new Promise((resolve) => setTimeout(resolve, 100));
-        return HttpResponse.json([
-          { id: '1', title: 'Delayed todo', completed: false },
-        ]);
-      })
-    );
-
-    render(<TodoList />);
-
-    // verify loading state appears
-    expect(screen.getByRole('progressbar')).toBeInTheDocument();
-
-    // wait for data and verify loading disappears
-    expect(await screen.findByText('Delayed todo')).toBeInTheDocument();
-    expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
-  });
-});
-```
-
-### testing optimistic updates
-
-```typescript
-describe('Optimistic updates', () => {
-  it('shows todo immediately before server confirms', async () => {
-    const user = userEvent.setup();
-
-    server.use(
-      http.get('/api/todos', () => HttpResponse.json([])),
-      http.post('/api/todos', async () => {
-        await new Promise((resolve) => setTimeout(resolve, 500));
-        return HttpResponse.json({
-          id: '1',
-          title: 'New todo',
-          completed: false,
-        });
-      })
-    );
-
-    render(<TodoApp />);
-    await screen.findByRole('textbox');
-
-    await user.type(
-      screen.getByRole('textbox', { name: /task title/i }),
-      'New todo'
-    );
-    await user.click(screen.getByRole('button', { name: /add todo/i }));
-
-    // todo should appear immediately (optimistic update)
-    expect(screen.getByText('New todo')).toBeInTheDocument();
-  });
-
-  it('rolls back optimistic update on server error', async () => {
-    const user = userEvent.setup();
-
-    server.use(
-      http.get('/api/todos', () => HttpResponse.json([])),
-      http.post('/api/todos', () => {
-        return new HttpResponse(null, { status: 500 });
-      })
-    );
-
-    render(<TodoApp />);
-    await screen.findByRole('textbox');
-
-    await user.type(
-      screen.getByRole('textbox', { name: /task title/i }),
-      'Failed todo'
-    );
-    await user.click(screen.getByRole('button', { name: /add todo/i }));
-
-    // should show error and remove optimistic todo
-    await waitFor(() => {
-      expect(screen.queryByText('Failed todo')).not.toBeInTheDocument();
-    });
-    expect(screen.getByText(/failed to add todo/i)).toBeInTheDocument();
-  });
-});
-```
-
-### testing delete operations
-
-```typescript
-describe('Deleting todos', () => {
-  it('removes todo from list after successful delete', async () => {
-    const user = userEvent.setup();
-
-    server.use(
-      http.get('/api/todos', () => {
-        return HttpResponse.json([
-          { id: '1', title: 'Todo to delete', completed: false },
-        ]);
-      }),
-      http.delete('/api/todos/1', () => {
-        return new HttpResponse(null, { status: 204 });
-      })
-    );
-
-    render(<TodoList />);
-
-    // wait for todo to appear
-    expect(await screen.findByText('Todo to delete')).toBeInTheDocument();
-
-    // delete it
-    await user.click(screen.getByRole('button', { name: /delete/i }));
-
-    // confirm deletion if there's a confirmation dialog
-    const confirmButton = screen.queryByRole('button', { name: /confirm/i });
-    if (confirmButton) {
-      await user.click(confirmButton);
-    }
-
-    // verify it's gone
-    await waitFor(() => {
-      expect(screen.queryByText('Todo to delete')).not.toBeInTheDocument();
-    });
   });
 });
 ```
@@ -1005,7 +798,7 @@ export const useFetchTodos = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchTodos = async () => {
+  const fetchTodos = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -1018,11 +811,11 @@ export const useFetchTodos = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchTodos();
-  }, []);
+  }, [fetchTodos]);
 
   return { todos, loading, error, refetch: fetchTodos };
 };
@@ -1036,7 +829,7 @@ import { useFetchTodos } from './useFetchTodos';
 
 describe('useFetchTodos', () => {
   beforeEach(() => {
-    vi.restoreAllMocks();
+    vi.resetAllMocks();
   });
 
   it('fetches todos on mount', async () => {
@@ -1253,7 +1046,7 @@ describe('useDebouncedSearch', () => {
       result.current.setQuery('abc');
     });
 
-    // only 200ms have passed since last input
+    // 200ms since last setQuery('abc'), 100ms short of the 300ms delay
     act(() => {
       vi.advanceTimersByTime(200);
     });
@@ -1264,7 +1057,7 @@ describe('useDebouncedSearch', () => {
       vi.advanceTimersByTime(100);
     });
 
-    expect(result.current.debouncedQuery).toBe('abc'); // final value
+    expect(result.current.debouncedQuery).toBe('abc'); // 300ms since last input
   });
 
   it('uses custom delay', () => {
@@ -1338,6 +1131,9 @@ describe('useFilter', () => {
   });
 
   it('updates when filter function changes', () => {
+    // note: passing stable function references here matters because useFilter
+    // uses useMemo with filterFn as a dependency. if you pass inline arrow
+    // functions, useMemo recomputes every render regardless (new reference each time).
     const completedFilter = (todo: typeof todos[0]) => todo.completed;
     const pendingFilter = (todo: typeof todos[0]) => !todo.completed;
 
@@ -1515,7 +1311,7 @@ await waitForElementToBeRemoved(() => screen.queryByText('Loading...'));
 | MUI Select | `combobox` |
 | Checkbox, MUI Checkbox | `checkbox` |
 | Radio, MUI Radio | `radio` |
-| MUI Switch | `switch` |
+| MUI Switch | `checkbox` (verify for your MUI version) |
 | MUI Dialog | `dialog` |
 | Menu | `menu` |
 | MenuItem | `menuitem` |
