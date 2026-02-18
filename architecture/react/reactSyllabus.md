@@ -1,7 +1,7 @@
-# React / TypeScript / MUI — 16-Week Mastery Syllabus (Revised Edition)
+# React / TypeScript / MUI — 20-Week Mastery Syllabus (Expanded Edition)
 
 **Self-Directed Saturday Study Program**
-6–8 hours per session · 4 modules · 6 projects + capstone
+6–8 hours per session · 5 modules · 6 projects + capstone
 
 *Inspired by the rigor of EECS 381 (University of Michigan)*
 
@@ -9,11 +9,11 @@
 
 ## Design Philosophy
 
-This revised syllabus borrows two structural ideas from rigorous university courses:
+This syllabus borrows two structural ideas from rigorous university courses:
 
 **1. Prescribed readings with specific sources.** Each week assigns concrete chapters, documentation pages, or articles. You should read these before or during the session, not after. The readings are the minimum — go deeper where your curiosity takes you, but cover the assigned material.
 
-**2. Projects sequenced to the material.** Six focused projects plus a capstone are threaded through the 16 weeks. Each project is designed so that everything you need has been covered by the time it is assigned. Projects build on each other: the data model from Project 2 reappears in Project 4, the theme from Project 3 carries into Project 5.
+**2. Projects sequenced to the material.** Six focused projects plus a capstone are threaded through the 20 weeks. Each project is designed so that everything you need has been covered by the time it is assigned. Projects build on each other: the data model from Project 2 reappears in Project 4, the theme from Project 3 carries into Project 5.
 
 The 30-minute struggle rule still applies: when stuck on a concept, spend at least 30 minutes working through it before searching or asking for help. But do not spend hours stuck on a project requirement — ask your study companion for a targeted hint.
 
@@ -31,6 +31,9 @@ All readings below reference these sources. Bookmark them before you begin.
 | **TQ** | TanStack Query v5 Docs | tanstack.com/query/latest/docs |
 | **Vite** | Vite Documentation | vite.dev/guide/ |
 | **RTL** | React Testing Library Docs | testing-library.com/docs/react-testing-library/intro |
+| **TL** | Testing Library (core) Docs | testing-library.com/docs/ |
+| **UE** | user-event Docs | testing-library.com/docs/user-event/intro |
+| **KCD** | Kent C. Dodds Blog | kentcdodds.com/blog |
 | **RC** | React Compiler Docs | react.dev/learn/react-compiler |
 
 *Supplementary sources are cited inline where assigned. All official docs are free.*
@@ -48,8 +51,8 @@ Projects are cumulative. Later projects reuse code, types, and patterns from ear
 | P2 | Stateful Task Manager | Wk 5 / End Wk 7 | Rendering model, useReducer, Context, useRef, custom hooks |
 | P3 | MUI Design System Shell | Wk 9 / End Wk 10 | Theme creation, sx, styled(), styleOverrides, dark mode |
 | P4 | Data Dashboard | Wk 11 / End Wk 12 | DataGrid, Autocomplete, Dialog, module augmentation, a11y |
-| P5 | Tested & Fetching | Wk 13 / End Wk 15 | Vitest, RTL, TanStack Query, Suspense, error boundaries, Vite |
-| CAP | Capstone: Full Application | Wk 16 | All of the above, integrated |
+| P5 | Tested & Fetching | Wk 13 / End Wk 18 | Vitest, RTL, mocking, TanStack Query, Suspense, error boundaries, Vite |
+| CAP | Capstone: Full Application | Wk 19 / End Wk 20 | All of the above, integrated |
 
 ---
 
@@ -133,7 +136,7 @@ Projects are cumulative. Later projects reuse code, types, and patterns from ear
 - RC: React Compiler documentation — full page. Understand what it memoizes and the Rules of React it enforces.
 - React: "Rules of React" page — read carefully. These are the contract the Compiler relies on.
 - React: "memo" API reference, "useMemo" API reference, "useCallback" API reference — skim. Understand these as escape hatches, not defaults.
-- React: "Lazy" API reference and "Suspense" API reference — read for code splitting. We return to Suspense for data fetching in Week 14.
+- React: "Lazy" API reference and "Suspense" API reference — read for code splitting. We return to Suspense for data fetching in Week 17.
 
 > **PROJECT 2 ASSIGNED: Stateful Task Manager**
 > A task management app with: multiple task lists, drag-to-reorder (optional), filters (active/completed/all), and a dark mode toggle. Must use: useReducer for task state, Context for theme/preferences (not for task data), at least one useRef, at least one custom hook. The React Compiler should be enabled. Everything needed is covered by end of Week 7. Due end of Week 7.
@@ -254,27 +257,96 @@ Projects are cumulative. Later projects reuse code, types, and patterns from ear
 
 ---
 
-## Module 4: Integration and Production (Weeks 13–16)
+## Module 4: Testing Mastery (Weeks 13–16)
 
-### Week 13: Testing
+*Testing is too important — and too often done badly — to compress into a single session. This module gives each dimension of frontend testing the dedicated attention it deserves.*
 
-**Topics:** Vitest setup and configuration, React Testing Library philosophy and API, component testing, hook testing, mocking, user-event.
+### Week 13: Testing Philosophy and Vitest Fundamentals
+
+**Topics:** Why we test (and what not to test), the Testing Trophy, Vitest setup and configuration, test lifecycle hooks, basic assertions, the `describe`/`it`/`expect` API, watch mode, test environments (`jsdom`, `happy-dom`).
 
 **Assigned Readings:**
-- Vitest: "Getting Started" and "Features" — understand the Vite-native test runner.
-- Vitest: "Mocking" page — vi.fn(), vi.mock(), vi.spyOn().
-- RTL: "Introduction" and "Guiding Principles" — understand the testing philosophy (test behavior, not implementation).
-- RTL: "API" overview — read render, screen, and the query priority guide (getByRole > getByLabelText > getByText > getByTestId).
-- RTL: "user-event" page — understand why user-event is preferred over fireEvent.
-- React: "Testing" page on react.dev (if available) — or the Testing Recipes legacy page.
-- Article: Kent C. Dodds, "Common Mistakes with React Testing Library" — short but essential.
+- KCD: "Write tests. Not too many. Mostly integration." — one page. This sets the philosophy for everything that follows. Understand the Testing Trophy (static analysis → unit → integration → e2e) and why integration tests provide the best confidence-to-cost ratio.
+- KCD: "Testing Implementation Details" — understand why testing internal state, method calls, and component internals leads to brittle tests.
+- Vitest: "Getting Started" — follow the installation and first test walkthrough end-to-end. Set up Vitest in a Vite + React + TypeScript project.
+- Vitest: "Features" — read the full page. Pay attention to: Vite-native transformation, watch mode, in-source testing, TypeScript support out of the box, and Jest compatibility.
+- Vitest: "Configuring Vitest" — understand how Vitest reads `vite.config.ts` (the `test` key) or `vitest.config.ts`. Read the entries for `environment`, `globals`, `setupFiles`, `include`, `coverage`.
+- Vitest: "Test API Reference" — read the entries for `describe`, `it` / `test`, `expect`, `beforeEach`, `afterEach`, `beforeAll`, `afterAll`. Skim the full matcher list on `expect`.
+- Vitest: "Test Environment" — understand the difference between `node`, `jsdom`, and `happy-dom`. For React component testing, you need a DOM environment.
 
 > **PROJECT 5 ASSIGNED: Tested & Fetching**
-> Add a test suite to your existing projects (primarily Project 2 or 4): at least 10 component tests, at least 2 custom hook tests, at least 1 mocked API test. Then add TanStack Query for data fetching with a mock or real API, including loading/error states with Suspense and error boundaries. Everything needed is covered by end of Week 15. Due end of Week 15.
+> Add a comprehensive test suite to your existing projects (primarily Project 2 or 4). Build incrementally across Weeks 13–16: start with basic component tests, add queries and user interaction, layer in mocking and async patterns, and finish with integration tests and accessibility checks. By the end of Week 16: at least 15 component tests, at least 3 custom hook tests, at least 2 mocked API tests, at least 1 integration test spanning multiple components. Then in Weeks 17–18, add TanStack Query for data fetching with corresponding test coverage. Due end of Week 18.
+
+*By the end of this week you should have Vitest running in your project, be able to write and run basic assertion tests, and understand the testing philosophy that guides every decision in Weeks 14–16.*
 
 ---
 
-### Week 14: Server State and Data Fetching
+### Week 14: React Testing Library — Rendering, Queries, and user-event
+
+**Topics:** RTL philosophy (test behavior, not implementation), `render` and `screen`, query variants (`getBy`, `queryBy`, `findBy`, `getAllBy`), query priority (`getByRole` > `getByLabelText` > `getByText` > `getByTestId`), accessible queries and ARIA roles, `user-event` vs. `fireEvent`, `waitFor` and async utilities, `within`, `cleanup`, debugging with `screen.debug()` and `logRoles`.
+
+**Assigned Readings:**
+- RTL: "Introduction" — full page. Internalize the guiding principle: "The more your tests resemble the way your software is used, the more confidence they can give you."
+- RTL: "Guiding Principles" — full page. Understand why RTL does not expose component instances or internal state.
+- TL: "About Queries" — full page. This is the master reference for all query types. Study the priority table carefully:
+  1. **Queries Accessible to Everyone:** `getByRole`, `getByLabelText`, `getByPlaceholderText`, `getByText`, `getByDisplayValue`
+  2. **Semantic Queries:** `getByAltText`, `getByTitle`
+  3. **Test IDs:** `getByTestId` — last resort only
+- TL: "ByRole" query page — read in depth. `getByRole` with the `name` option (`getByRole('button', { name: /submit/i })`) should be your default query for nearly everything. Understand implicit ARIA roles for HTML elements (e.g., `<button>` has role `button`, `<a href>` has role `link`, `<input type="text">` has role `textbox`).
+- UE: "Introduction" — full page. Understand why `user-event` simulates real user interactions (focus, keyboard, pointer) while `fireEvent` dispatches synthetic DOM events. `user-event` is always preferred.
+- UE: "Setup" — understand the `userEvent.setup()` pattern that returns a user instance for the test.
+- UE: API pages for `click`, `type`, `clear`, `selectOptions`, `keyboard`, `tab` — skim all. Read `click` and `type` carefully.
+- KCD: "Common Mistakes with React Testing Library" — full article. Essential reading. Key takeaways: use `screen` instead of destructuring `render`; use `getByRole` not `getByTestId`; don't wrap things in `act()` unnecessarily (`render` and `fireEvent` already do this); use `findBy` for async elements instead of `waitFor` + `getBy`; prefer `user-event` over `fireEvent`.
+- RTL: "API" reference — read the `render` function signature. Understand the `wrapper` option (for providing Context, theme, router wrappers). Read the `cleanup` section — Vitest with RTL auto-cleans after each test.
+
+*By the end of this week you should be able to render any component, find elements using accessible queries (primarily `getByRole`), simulate user interactions with `user-event`, and assert on DOM state. You should also know when to use `queryBy` (asserting absence), `findBy` (async appearance), and `getAllBy` (multiple elements).*
+
+---
+
+### Week 15: Mocking, Async Testing, and Hook Testing
+
+**Topics:** `vi.fn()`, `vi.spyOn()`, `vi.mock()`, mock lifecycle (`mockClear`/`mockReset`/`mockRestore`), mocking modules and API calls, fake timers (`vi.useFakeTimers`), testing async behavior (`findBy`, `waitFor`, `waitForElementToBeRemoved`), testing custom hooks with `renderHook`, mocking Context providers, mocking `fetch` or API layers.
+
+**Assigned Readings:**
+- Vitest: "Mocking" guide — full page. Understand the three core mocking tools:
+  - `vi.fn()` — creates a standalone mock function for tracking calls and controlling return values
+  - `vi.spyOn(object, 'method')` — wraps an existing method to track calls while preserving the original implementation by default
+  - `vi.mock('./module')` — replaces an entire module; the call is hoisted to the top of the file before imports
+- Vitest: "Mock Functions" API reference — read the entries for `mockReturnValue`, `mockReturnValueOnce`, `mockResolvedValue`, `mockResolvedValueOnce`, `mockImplementation`, `mockClear`, `mockReset`, `mockRestore`.
+- Vitest: "Vi" API reference — read the entries for `vi.fn`, `vi.spyOn`, `vi.mock`, `vi.mocked`, `vi.hoisted`, `vi.useFakeTimers`, `vi.useRealTimers`, `vi.setSystemTime`, `vi.restoreAllMocks`.
+- Vitest: "Mocking Modules" guide — read in full. Understand: `vi.mock` hoisting behavior (it always executes before imports); the factory function pattern; automocking (no factory); `importOriginal` for partial mocking; `vi.mocked()` as a type helper.
+- RTL: "renderHook" API reference — understand how to test custom hooks in isolation. Study the `wrapper` option for providing Context.
+- TL: "Async Utilities" — read `waitFor`, `waitForElementToBeRemoved`, and the `findBy` query variant. Understand that `findBy` is `waitFor` + `getBy` combined.
+- Vitest: "Fake Timers" guide — understand `vi.useFakeTimers()`, `vi.advanceTimersByTime()`, `vi.runAllTimers()`, and `vi.useRealTimers()`. Know when to use fake timers (debounce, setTimeout, setInterval) vs. when to use `findBy` (data fetching, state transitions).
+- KCD: "How to Test Custom React Hooks" (or equivalent) — understand when to use `renderHook` vs. when to test hooks indirectly through the components that use them. The general guidance: prefer testing through a component; use `renderHook` only when the hook is used by many components or has complex logic worth isolating.
+
+*By the end of this week you should be able to mock API calls and module dependencies, test loading/error/success states, test custom hooks with `renderHook`, control time in tests, and understand the `mockClear`/`mockReset`/`mockRestore` lifecycle.*
+
+---
+
+### Week 16: Test Architecture, Patterns, and Coverage
+
+**Topics:** Integration testing patterns (testing multiple components together), custom render functions with providers, testing forms (validation, submission, error display), testing accessibility with `jest-axe` / `vitest-axe`, test organization and file structure, code coverage configuration and interpretation, the Testing Trophy revisited, when NOT to test, refactoring tests for maintainability.
+
+**Assigned Readings:**
+- KCD: "AHA Testing" — understand the balance between DRY and WET in test code. Tests should be readable standalone. Prefer "Avoid Hasty Abstractions" — duplication in tests is often better than premature shared utilities.
+- KCD: "Avoid Nesting When You're Testing" — understand the argument against deeply nested `describe` blocks. Flat test structure with descriptive names is often clearer.
+- KCD: "Making Your UI Tests Resilient to Change" — understand the relationship between query choice and test brittleness. Tests that query by role or label survive refactors; tests that query by class name or test ID break.
+- RTL: "Setup" — re-read the `wrapper` option. Study the pattern of creating a custom `renderWithProviders` function that wraps components in all necessary Context providers (theme, router, query client, etc.).
+- Vitest: "Coverage" — read the configuration page. Understand the `coverage.provider` option (`v8` or `istanbul`), `coverage.include`, `coverage.exclude`, `coverage.thresholds`. Understand what coverage numbers mean and why 100% coverage is not a goal — coverage measures execution, not correctness.
+- RTL: FAQ page — skim for common patterns: testing modals/portals, testing router-dependent components, testing components that use `useEffect` for data fetching.
+- Article: Deque, "axe-core for Automated Accessibility Testing" or the `vitest-axe` README — understand how to add automated accessibility checks to your component tests with `expect(container).toHaveNoViolations()`.
+- Review: re-read KCD "Common Mistakes with React Testing Library" — you will catch things you missed the first time now that you have hands-on experience.
+
+> **End-of-module self-assessment:** Run your full test suite. Check coverage for critical user flows (not for a number). Review each test and ask: "If the implementation changed but the behavior stayed the same, would this test still pass?" If not, refactor it. Run `vitest-axe` on at least 3 components.
+
+*By the end of this week you should have a maintainable, well-organized test suite that tests behavior over implementation, uses accessible queries, mocks external dependencies cleanly, and includes at least basic accessibility checks. You should be able to articulate why you test what you test — and why you leave some things untested.*
+
+---
+
+## Module 5: Integration and Production (Weeks 17–20)
+
+### Week 17: Server State and Data Fetching
 
 **Topics:** TanStack Query v5: useQuery, useSuspenseQuery, mutations, optimistic updates, Suspense and error boundaries, infinite scroll.
 
@@ -289,7 +361,7 @@ Projects are cumulative. Later projects reuse code, types, and patterns from ear
 
 ---
 
-### Week 15: Build Tooling
+### Week 18: Build Tooling
 
 **Topics:** Vite configuration in depth, React Compiler as Vite plugin, ESLint with typescript-eslint, Prettier, bundle analysis.
 
@@ -305,7 +377,7 @@ Projects are cumulative. Later projects reuse code, types, and patterns from ear
 
 ---
 
-### Week 16: Capstone
+### Week 19: Capstone — Build
 
 **Topics:** Integrate everything into a single, polished application.
 
@@ -314,7 +386,26 @@ Projects are cumulative. Later projects reuse code, types, and patterns from ear
 - Re-read any documentation for APIs you're using in the capstone. The docs are your primary reference now, not tutorials.
 
 > **CAPSTONE PROJECT**
-> Build a complete application that demonstrates mastery of all four modules. Requirements: TypeScript strict mode throughout, custom MUI theme with dark mode, at least one DataGrid or complex MUI component, TanStack Query for data fetching, full test suite (Vitest + RTL), React Compiler enabled, clean ESLint + Prettier configuration, proper code splitting. Scope it to be completable in 6–8 hours. A portfolio-quality project tracker, admin dashboard, or content management tool are all good choices.
+> Build a complete application that demonstrates mastery of all five modules. Requirements: TypeScript strict mode throughout, custom MUI theme with dark mode, at least one DataGrid or complex MUI component, TanStack Query for data fetching, full test suite (Vitest + RTL) with accessible queries and mocked API layer, React Compiler enabled, clean ESLint + Prettier configuration, proper code splitting. Scope it to be completable in 12–16 hours across two sessions. A portfolio-quality project tracker, admin dashboard, or content management tool are all good choices.
+
+*Focus on building. Get the application working end-to-end. Do not polish prematurely — Week 20 is for refinement.*
+
+---
+
+### Week 20: Capstone — Polish, Test, and Review
+
+**Topics:** Code review, test coverage gaps, accessibility audit, bundle analysis, documentation.
+
+**Assigned Readings:**
+- No new readings. This week is for refinement and self-review.
+
+**Session plan:**
+1. Run the Self-Review Protocol (see Appendix) on your capstone.
+2. Run your full test suite. Identify the 2–3 most critical user flows that are untested or undertested. Write those tests.
+3. Run `vitest-axe` on your key pages/components. Fix any accessibility violations.
+4. Run the bundle analyzer. Look for unexpectedly large chunks. Apply code splitting if needed.
+5. Write a README that explains the project, the architecture, and how to run it. This is portfolio-quality work — present it that way.
+6. Ask your study companion to review one component, one test file, and your theme configuration.
 
 *Self-review checklist: Does every component have typed props? Is your theme augmented with custom tokens? Do your tests cover the critical paths? Does the bundle look reasonable in the analyzer? Would you put this on your GitHub?*
 
@@ -346,8 +437,33 @@ These reflect the syllabus's perspective and should be treated as your baseline.
 
 **Test runner:** Vitest is the default for Vite-based projects. Jest is fine for legacy codebases.
 
+**Testing philosophy:** Test behavior, not implementation. Use accessible queries (`getByRole` first). Prefer `user-event` over `fireEvent`. The Testing Trophy favors integration tests for the best confidence-to-cost ratio.
+
 **Server state:** TanStack Query v5 with object-based API and stable Suspense support via useSuspenseQuery.
 
 **Client state:** Most apps do not need an external state library. useState, useReducer, and Context cover the majority of needs. URL search params for shareable UI state.
 
 **TypeScript strict mode:** Non-negotiable for new projects.
+
+---
+
+## Appendix: Module-by-Module Skill Progression
+
+| Module | Weeks | Core Skills |
+|---|---|---|
+| 1 — TypeScript Foundations | 1–4 | Types, generics, utility types, tsconfig, strict mode |
+| 2 — React Deep Dive | 5–8 | Rendering, state, hooks, component patterns |
+| 3 — MUI Mastery | 9–12 | Theming, styling APIs, complex components, a11y |
+| 4 — Testing Mastery | 13–16 | Vitest, RTL, mocking, async testing, coverage |
+| 5 — Integration and Production | 17–20 | TanStack Query, Vite, build tooling, capstone |
+
+---
+
+## Appendix: Testing Skill Progression (Module 4 Detail)
+
+| Week | You can write... | Key new tool/concept |
+|---|---|---|
+| 13 | Basic Vitest assertions, simple pure-function tests, first component `render` + `expect` | Vitest setup, `describe`/`it`/`expect`, test environments |
+| 14 | Component tests with accessible queries and simulated user interaction | `screen`, `getByRole`, `user-event`, `findBy` for async |
+| 15 | Tests with mocked APIs, mocked modules, fake timers, and isolated hook tests | `vi.fn`, `vi.mock`, `vi.spyOn`, `renderHook`, `waitFor` |
+| 16 | Integration tests, provider-wrapped renders, a11y checks, coverage-guided refactoring | Custom render, `vitest-axe`, coverage thresholds, test architecture |
